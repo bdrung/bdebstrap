@@ -1,0 +1,28 @@
+mmdebstrap:
+  architectures:
+  - amd64
+  cleanup-hooks:
+  - cp /dev/null "$1/etc/hostname"
+  - if test -f "$1/etc/resolv.conf"; then cp /dev/null "$1/etc/resolv.conf"; fi
+  customize-hooks:
+  - cp --preserve=timestamps -v "$1"/boot/vmlinuz* "$1${BDEBSTRAP_OUTPUT_DIR?}/vmlinuz"
+  - cp --preserve=timestamps -v "$1"/boot/initrd.img* "$1${BDEBSTRAP_OUTPUT_DIR?}/initrd.img"
+  - mkdir -p "$1/root/.ssh"
+  - upload ~/.ssh/id_rsa.pub /root/.ssh/authorized_keys
+  # Create a proper root password entry with "openssl passwd -6 $password"
+  - chroot "$1" usermod -p '$6$gxPiEmowud.yY/mT$SE1TTiHkw9mW3YtECxyluZtNPHN7IYPa.vRlWZZVtC8L6qG2PzGpwGIlgMDY79vucWD577fZm/EcA4LS3Koob0' root
+  keyrings:
+  - /usr/share/keyrings/debian-archive-keyring.gpg
+  mode: unshare
+  packages:
+  - iproute2
+  - less
+  - libpam-systemd # recommended by systemd and needed to not run into https://bugs.debian.org/751636
+  - linux-image-cloud-amd64
+  - live-boot
+  - locales
+  - openssh-server
+  - systemd-sysv # Use systemd as init system (otherwise /sbin/init would be missing)
+  suite: buster
+  target: root.squashfs
+  variant: minbase

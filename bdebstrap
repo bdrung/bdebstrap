@@ -1,0 +1,750 @@
+#!/usr/bin/python3
+
+# Copyright (C) 2019-2020 Benjamin Drung <bdrung@posteo.de>
+#
+# Permission to use, copy, modify, and/or distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+"""
+Call mmdebstrap with parameters specified in a YAML file.
+"""
+
+import argparse
+import collections
+import io
+import logging
+import os
+import re
+import shutil
+import subprocess
+import sys
+import time
+
+import ruamel.yaml
+
+MANIFEST_FILENAME = "manifest"
+OUTPUT_DIR = "/tmp/bdebstrap-output"
+LOG_FORMAT = "%(asctime)s %(name)s %(levelname)s: %(message)s"
+__script_name__ = os.path.basename(sys.argv[0]) if __name__ == "__main__" else __name__
+
+
+MMDEBSTRAP_OPTS = {
+    "aptopts": list,
+    "architectures": list,
+    "cleanup-hooks": list,
+    "components": list,
+    "customize-hooks": list,
+    "dpkgopts": list,
+    "essential-hooks": list,
+    "hostname": str,
+    "install-recommends": bool,
+    "keyrings": list,
+    "mirrors": list,
+    "mode": str,
+    "packages": list,
+    "setup-hooks": list,
+    "suite": str,
+    "target": str,
+    "variant": str,
+}
+
+
+class Mmdebstrap:
+    """Wrapper around calling mmdebstrap."""
+
+    def __init__(self, config):
+        self.config = config
+        self.logger = logging.getLogger(__script_name__)
+
+    def construct_parameters(self, output_dir, simulate=False):
+        """Construct the parameter for mmdebstrap from a given dictionary."""
+        # pylint: disable=too-many-branches
+        cmd = ["mmdebstrap", "-v"]
+        if simulate:
+            cmd += ["--simulate"]
+        mmdebstrap = self.config.get("mmdebstrap", {})
+        if "variant" in mmdebstrap:
+            cmd.append("--variant={}".format(mmdebstrap["variant"]))
+        if "mode" in mmdebstrap:
+            cmd.append("--mode={}".format(mmdebstrap["mode"]))
+        if "aptopts" in mmdebstrap:
+            cmd += ["--aptopt={}".format(aptopt) for aptopt in mmdebstrap["aptopts"]]
+        if "keyrings" in mmdebstrap:
+            cmd += ["--keyring={}".format(keyring) for keyring in mmdebstrap["keyrings"]]
+        if "dpkgopts" in mmdebstrap:
+            cmd += ["--dpkgopt={}".format(dpkgopt) for dpkgopt in mmdebstrap["dpkgopts"]]
+        # For convenience use "packages" key as alias for "include"
+        if "packages" in mmdebstrap:
+            cmd.append("--include={}".format(",".join(mmdebstrap["packages"])))
+        if "components" in mmdebstrap:
+            cmd.append("--components={}".format(",".join(mmdebstrap["components"])))
+        if "architectures" in mmdebstrap:
+            cmd.append("--architectures={}".format(",".join(mmdebstrap["architectures"])))
+        if "setup-hooks" in mmdebstrap:
+            cmd += ["--setup-hook={}".format(hook) for hook in mmdebstrap["setup-hooks"]]
+        cmd.append('--essential-hook=mkdir -p "$1{}"'.format(OUTPUT_DIR))
+        if "essential-hooks" in mmdebstrap:
+            cmd += ["--essential-hook={}".format(hook) for hook in mmdebstrap["essential-hooks"]]
+        if "customize-hooks" in mmdebstrap:
+            cmd += ["--customize-hook={}".format(hook) for hook in mmdebstrap["customize-hooks"]]
+        # cleanup hooks are just hooks that run after all other customize hooks
+        if "cleanup-hooks" in mmdebstrap:
+            cmd += ["--customize-hook={}".format(hook) for hook in mmdebstrap["cleanup-hooks"]]
+
+        # Special parameters not present in mmdebstrap
+        if "hostname" in mmdebstrap:
+            cmd.append(
+                '--customize-hook=echo "{}" > "$1/etc/hostname"'.format(mmdebstrap["hostname"])
+            )
+        if "install-recommends" in mmdebstrap and mmdebstrap["install-recommends"] is True:
+            cmd.append('--aptopt=Apt::Install-Recommends "true"')
+        cmd.append(
+            '--customize-hook=chroot "$1" dpkg-query '
+            "-f='${Package}\\t${Version}\\n' -W > \"$1%s/manifest\"" % (OUTPUT_DIR)
+        )
+        cmd.append('--customize-hook=sync-out "{}" "{}"'.format(OUTPUT_DIR, output_dir))
+        cmd.append('--customize-hook=rm -rf "$1{}"'.format(OUTPUT_DIR))
+
+        # Positional arguments
+        cmd.append(mmdebstrap.get("suite", "-"))
+        cmd.append(mmdebstrap.get("target", "-"))
+        cmd += mmdebstrap.get("mirrors", [])
+
+        return cmd
+
+    def call(self, output_dir, simulate=False):
+        """Call mmdebstrap."""
+        cmd = self.construct_parameters(output_dir, simulate)
+        self.logger.info("Calling %s", escape_cmd(cmd))
+        subprocess.check_call(cmd)
+
+        for file in (os.path.join(output_dir, "manifest"),
+                     self.config.get("mmdebstrap", {}).get("target", "")):
+            if os.path.isfile(file):
+                clamp_mtime(file, self.config.source_date_epoch)
+
+        clamp_mtime(output_dir, self.config.source_date_epoch)
+
+
+def clamp_mtime(path, source_date_epoch):
+    """Clamp the modification time for the given path to SOURCE_DATE_EPOCH."""
+    if not source_date_epoch:
+        return
+    stat = os.stat(path)
+    if stat.st_mtime > int(source_date_epoch):
+        os.utime(path, (int(source_date_epoch), int(source_date_epoch)))
+
+
+def duration_str(duration):
+    """Return duration in the biggest useful time unit (hours, minutes, seconds)."""
+    if duration < 60:
+        return "%.3f seconds" % (duration)
+    if duration < 3600:
+        return "%i min %.3f s (= %.3f s)" % (duration // 60, duration % 60, duration)
+
+    minutes = duration % 3600
+    return "%i h %i min %.3f s (= %.3f s)" % (
+        duration // 3600,
+        minutes // 60,
+        minutes % 60,
+        duration,
+    )
+
+
+def escape_cmd(cmd):
+    """Escape command line arguments for printing/logging."""
+    unsafe_re = re.compile(r"[^\w@%+=:,./-]", re.ASCII)
+
+    def quote(cmd_argv):
+        """Return a shell-escaped version of the string *cmd_argv*."""
+        if unsafe_re.search(cmd_argv) is None:
+            return cmd_argv
+        parts = cmd_argv.split("'")
+        for i in range(0, len(parts), 2):
+            # Only escape parts that are not quoted with single quotes.
+            parts[i] = re.sub('(["$])', r"\\\1", parts[i])
+        return '"' + "'".join(parts) + '"'
+
+    return " ".join(quote(x) for x in cmd)
+
+
+def sanitize_list(list_):
+    """Sanitize given list by removing all empty entries."""
+    if list_ is None:
+        return None
+    return [x for x in list_ if x]
+
+
+def parse_args(args):  # pylint: disable=too-many-statements
+    """Parse the given command line arguments."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    # parser.add_argument("-t", "--target", help="path to a tarball filename or a directory")
+    # parser.add_argument("-m", "--manifest", help="Store packages manifest in given file")
+    parser.add_argument(
+        "-c", "--config", action="append", default=[], help="bdebstrap configuration YAML."
+    )
+    parser.add_argument("-n", "--name", help="name of the generated golden image")
+    parser.add_argument(
+        "-e", "--env", action="append", default=[], help="add additional environment variable."
+    )
+    parser.add_argument(
+        "-s",
+        "--simulate",
+        "--dry-run",
+        action="store_true",
+        help=(
+            "Run apt-get with --simulate. Only the package cache is initialized but no binary "
+            "packages are downloaded or installed. Use this option to quickly check whether a "
+            "package selection within a certain suite and variant can in principle be installed "
+            "as far as their dependencies go. If the output is a tarball, then no output is "
+            "produced. If the output is a directory, then the directory will be left populated "
+            "with the skeleton files and directories necessary for apt to run in it."
+        ),
+    )
+    parser.add_argument("-b", "--output-base-dir", default=".", help="output base directory")
+    parser.add_argument("-o", "--output", help="output directory (default: output-base-dir/name)")
+    parser.add_argument(
+        "--debug",
+        dest="log_level",
+        help=(
+            "In addition to the output produced by --verbose, write detailed debugging "
+            "information to standard error."
+        ),
+        action="store_const",
+        const=logging.DEBUG,
+        default=logging.INFO,
+    )
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        dest="log_level",
+        help="Decrease output verbosity to warnings and errors",
+        action="store_const",
+        const=logging.WARNING,
+    )
+    parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="Remove existing output directory before creating a new one",
+    )
+    parser.add_argument(
+        "-t", "--tmpdir", help="Temporary directory for building the image (default: /tmp)"
+    )
+
+    # Arguments from mmdebstrap
+    parser.add_argument(
+        "--variant",
+        choices=[
+            "extract",
+            "custom",
+            "essential",
+            "apt",
+            "required",
+            "minbase",
+            "buildd",
+            "important",
+            "debootstrap",
+            "-",
+            "standard",
+        ],
+        help="Choose which package set to install.",
+    )
+    parser.add_argument(
+        "--mode",
+        choices=[
+            "auto",
+            "sudo",
+            "root",
+            "unshare",
+            "fakeroot",
+            "fakechroot",
+            "proot",
+            "chrootless",
+        ],
+        help=(
+            "Choose how to perform the chroot operation and create a filesystem with "
+            "ownership information different from the current user."
+        ),
+    )
+    parser.add_argument(
+        "--aptopt", action="append", help="Pass arbitrary options or configuration files to apt."
+    )
+    parser.add_argument(
+        "--keyring", action="append", help="Change the default keyring to use by apt."
+    )
+    parser.add_argument(
+        "--dpkgopt", action="append", help="Pass arbitrary options or configuration files to dpkg."
+    )
+    parser.add_argument(
+        "--hostname", help="Write the given HOSTNAME into /etc/hostname in the target chroot.",
+    )
+    parser.add_argument(
+        "--install-recommends",
+        action="store_true",
+        help="Consider recommended packages as a dependency for installing.",
+    )
+    parser.add_argument(
+        "--packages",
+        "--include",
+        action="append",
+        help=(
+            "Comma or whitespace separated list of packages which will be installed in "
+            "addition to the packages installed by the specified variant."
+        ),
+    )
+    parser.add_argument(
+        "--components",
+        action="append",
+        help=(
+            "Comma or whitespace separated list of components like main, contrib and "
+            "non-free which will be used for all URI-only MIRROR arguments."
+        ),
+    )
+    parser.add_argument(
+        "--architectures",
+        action="append",
+        help=(
+            "Comma or whitespace separated list of architectures. The first architecture "
+            "is the native architecture inside the chroot."
+        ),
+    )
+
+    parser.add_argument(
+        "--setup-hook",
+        metavar="COMMAND",
+        action="append",
+        help=(
+            "Execute arbitrary COMMAND right after initial setup (directory creation, "
+            "configuration of apt and dpkg, ...) but before any packages are downloaded or "
+            "installed. At that point, the chroot directory does not contain any executables and "
+            "thus cannot be chroot-ed into."
+        ),
+    )
+    parser.add_argument(
+        "--essential-hook",
+        metavar="COMMAND",
+        action="append",
+        help=(
+            "Execute arbitrary COMMAND after the Essential:yes packages have been installed, "
+            "but before installing the remaining packages."
+        ),
+    )
+    parser.add_argument(
+        "--customize-hook",
+        metavar="COMMAND",
+        action="append",
+        help=(
+            "Execute arbitrary COMMAND after the chroot is set up and all packages got installed "
+            "but before final cleanup actions are carried out."
+        ),
+    )
+    parser.add_argument(
+        "--cleanup-hook",
+        metavar="COMMAND",
+        action="append",
+        help="Execute arbitrary COMMAND after all customize hooks have been executed.",
+    )
+
+    # Positional arguments from mmdebstrap
+    parser.add_argument(
+        "--suite",
+        help=(
+            "The suite may be a valid release code name (eg, sid, stretch, jessie) or a symbolic "
+            "name (eg, unstable, testing, stable, oldstable)."
+        ),
+    )
+    parser.add_argument(
+        "--target",
+        help=(
+            "The optional target argument can either be the path to a directory, the path to a "
+            "tarball filename, the path to a squashfs image or '-'."
+        ),
+    )
+    parser.add_argument(
+        "--mirrors",
+        action="append",
+        default=[],
+        help=(
+            "Comma separated list of mirrors. If no mirror option is provided, "
+            "http://deb.debian.org/debian is used."
+        ),
+    )
+
+    parser.add_argument(
+        metavar="suite",
+        dest="suite_positional",
+        nargs="?",
+        help=(
+            "The suite may be a valid release code name (eg, sid, stretch, jessie) or a symbolic "
+            "name (eg, unstable, testing, stable, oldstable)."
+        ),
+    )
+    parser.add_argument(
+        metavar="target",
+        dest="target_positional",
+        nargs="?",
+        help=(
+            "The optional target argument can either be the path to a directory, the path to a "
+            "tarball filename, the path to a squashfs image or '-'."
+        ),
+    )
+    parser.add_argument(
+        metavar="mirrors",
+        dest="mirrors_positional",
+        nargs="*",
+        help=(
+            "APT mirror to use. If no mirror option is provided, "
+            "http://deb.debian.org/debian is used."
+        ),
+    )
+
+    args = parser.parse_args(args)
+
+    env_dict = {}
+    for env in args.env:
+        if "=" not in env:
+            parser.error(
+                "Failed to parse --env '%s'. It needs to be in the format KEY=value." % env
+            )
+        key, value = env.split("=", 1)
+        env_dict[key] = value
+    args.env = env_dict
+
+    if args.packages:
+        args.packages = [p for l in args.packages for p in re.split(",| ", l) if p]
+    if args.components:
+        args.components = [c for l in args.components for c in re.split(",| ", l) if c]
+    if args.architectures:
+        args.architectures = [a for l in args.architectures for a in re.split(",| ", l) if a]
+    args.mirrors = [m for mirror_list in args.mirrors for m in mirror_list.split(",") if m]
+
+    # Positional arguments override optional arguments (or extent them in case of "mirrors")
+    if args.suite_positional:
+        args.suite = args.suite_positional
+    if args.target_positional:
+        args.target = args.target_positional
+    args.mirrors += [m for m in args.mirrors_positional if m]
+    del args.suite_positional
+    del args.target_positional
+    del args.mirrors_positional
+
+    # Sanitize (clear empty entries in lists)
+    args.aptopt = sanitize_list(args.aptopt)
+    args.config = sanitize_list(args.config)
+    args.dpkgopt = sanitize_list(args.dpkgopt)
+    args.keyring = sanitize_list(args.keyring)
+    args.setup_hook = sanitize_list(args.setup_hook)
+    args.essential_hook = sanitize_list(args.essential_hook)
+    args.customize_hook = sanitize_list(args.customize_hook)
+    args.cleanup_hook = sanitize_list(args.cleanup_hook)
+
+    return args
+
+
+def dict_merge(this, other):
+    """
+    Update this dictionary with the key/value pairs from other, merging existing keys.
+    Return ``None``.
+
+    Inspired by ``dict.update()``, instead of updating only top-level keys,
+    dict_merge recurses down into nested dicts. Dictionaries are updated
+    recursively and lists are appended. The ``other`` dict is merged into
+    ``this``.
+
+    :param this: dictionary onto which the merge is executed
+    :param other: dictionary merged into ``this``
+    :return: None
+    """
+    for key in other.keys():
+        if (key in this and isinstance(this[key], collections.abc.MutableMapping)
+                and isinstance(other[key], collections.abc.Mapping)):
+            dict_merge(this[key], other[key])
+        elif (key in this and isinstance(this[key], collections.abc.MutableSequence)
+              and isinstance(other[key], collections.abc.Sequence)):
+            this[key] += other[key]
+        else:
+            this[key] = other[key]
+
+
+class Config(dict):
+    """YAML configuration for bdebstrap."""
+
+    _ENV_PREFIX = "BDEBSTRAP_"
+    _KEYS = {"env", "mmdebstrap", "name"}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(self, *args, **kwargs)
+        self.logger = logging.getLogger(__script_name__)
+        self.yaml = ruamel.yaml.YAML()
+
+    def _set_mmdebstrap_option(self, option, value):
+        """Set the given mmdebstrap option (overwriting existing values)."""
+        if "mmdebstrap" not in self:
+            self["mmdebstrap"] = {}
+        self["mmdebstrap"][option] = value
+
+    def _append_mmdebstrap_option(self, option, value):
+        """Append the given mmdebstrap option to the list of values."""
+        if "mmdebstrap" not in self:
+            self["mmdebstrap"] = {}
+        if option in self["mmdebstrap"]:
+            self["mmdebstrap"][option] += value
+        else:
+            self["mmdebstrap"][option] = value
+
+    def add_command_line_arguments(self, args):  # pylint: disable=too-many-branches
+        """Add/Override configs from the given command line arguments."""
+        for config_filename in args.config:
+            self.load(config_filename)
+
+        if args.env:
+            if "env" not in self:
+                self["env"] = {}
+            for key, value in args.env.items():
+                self["env"][key] = value
+        if args.name:
+            self["name"] = args.name
+
+        if args.variant:
+            self._set_mmdebstrap_option("variant", args.variant)
+        if args.mode:
+            self._set_mmdebstrap_option("mode", args.mode)
+        if args.aptopt:
+            self._append_mmdebstrap_option("aptopts", args.aptopt)
+        if args.keyring:
+            self._append_mmdebstrap_option("keyrings", args.keyring)
+        if args.dpkgopt:
+            self._append_mmdebstrap_option("dpkgopts", args.dpkgopt)
+        if args.hostname:
+            self._set_mmdebstrap_option("hostname", args.hostname)
+        if args.install_recommends:
+            self._set_mmdebstrap_option("install-recommends", args.install_recommends)
+        if args.packages:
+            self._append_mmdebstrap_option("packages", args.packages)
+        if args.components:
+            self._append_mmdebstrap_option("components", args.components)
+        if args.architectures:
+            self._append_mmdebstrap_option("architectures", args.architectures)
+        if args.setup_hook:
+            self._append_mmdebstrap_option("setup-hooks", args.setup_hook)
+        if args.essential_hook:
+            self._append_mmdebstrap_option("essential-hooks", args.essential_hook)
+        if args.customize_hook:
+            self._append_mmdebstrap_option("customize-hooks", args.customize_hook)
+        if args.cleanup_hook:
+            self._append_mmdebstrap_option("cleanup-hooks", args.cleanup_hook)
+        if args.suite:
+            self._set_mmdebstrap_option("suite", args.suite)
+        if args.target:
+            self._set_mmdebstrap_option("target", args.target)
+        if args.mirrors:
+            self._append_mmdebstrap_option("mirrors", args.mirrors)
+
+    def env_items(self):
+        """Return key-value pair of environment variables."""
+        return sorted(
+            list(self.get("env", {}).items())
+            + [
+                (self._ENV_PREFIX + "NAME", self["name"]),
+                (self._ENV_PREFIX + "OUTPUT_DIR", OUTPUT_DIR),
+            ]
+        )
+
+    def check(self):
+        """Check the format of the configuration."""
+        unknown_top_level_keys = sorted(k for k in self.keys() if k not in self._KEYS)
+        if unknown_top_level_keys:
+            self.logger.warning(
+                "Ignoring unknown top level keys: %s", ", ".join(unknown_top_level_keys)
+            )
+
+        if "mmdebstrap" in self:
+            for key, value in self["mmdebstrap"].items():
+                if key not in MMDEBSTRAP_OPTS:
+                    self.logger.warning("Ignoring unknown mmdebstrap option '%s'.", key)
+                    continue
+                if not isinstance(value, MMDEBSTRAP_OPTS[key]):
+                    raise ValueError(
+                        "Unexpected type '%s' for mmdebstrap option '%s'. "
+                        "Excepted: %s." % (type(value), key, MMDEBSTRAP_OPTS[key])
+                    )
+        else:
+            self.logger.warning("The configuration does not contain a 'mmdebstrap' entry.")
+
+        if "name" not in self:
+            raise ValueError("The configuration does not contain a 'name' entry.")
+
+    def load(self, config_filename):
+        """Loading configuration from given config file."""
+        self.logger.info("Loading configuration from '%s'...", config_filename)
+        try:
+            with open(config_filename) as config_file:
+                config = self.yaml.load(config_file)
+        except OSError as error:
+            self.logger.error(
+                "Failed to open configuration '%s': %s", config_filename, error.args[1]
+            )
+            raise
+
+        if "mmdebstrap" in config and "include" in config["mmdebstrap"]:
+            mmdebstrap = config["mmdebstrap"]
+            mmdebstrap["packages"] = mmdebstrap["include"] + mmdebstrap.get("packages", [])
+            del mmdebstrap["include"]
+
+        dict_merge(self, config)
+
+    def sanitize_packages(self):
+        """Sanitize packages list by removing duplicates (keeping the latest one)."""
+        if "mmdebstrap" not in self or "packages" not in self["mmdebstrap"]:
+            return
+
+        packages = collections.OrderedDict()
+        for package in self["mmdebstrap"]["packages"]:
+            if not package:
+                # Cover commented out and empty entries
+                continue
+            if "=" in package:
+                name, version = package.split("=", 1)
+                packages[name] = "=" + version
+            elif "/" in package:
+                name, version = package.split("/", 1)
+                packages[name] = "/" + version
+            else:
+                packages[package] = ""
+
+        self["mmdebstrap"]["packages"] = [k + v for k, v in packages.items()]
+
+    def save(self, config_filename, simulate=False):
+        """Save configuration to given config filename."""
+        self.logger.info(
+            "%s configuration to '%s'.",
+            "Simulate saving" if simulate else "Saving",
+            config_filename,
+        )
+        if simulate:
+            self.yaml.dump(dict(self), io.StringIO())
+        else:
+            with open(config_filename, "w") as config_file:
+                self.yaml.dump(dict(self), config_file)
+            clamp_mtime(config_filename, self.source_date_epoch)
+
+    @property
+    def source_date_epoch(self):
+        """Return SOURCE_DATE_EPOCH (for reproducible builds)."""
+        return self.get("env", {}).get("SOURCE_DATE_EPOCH")
+
+    def set_source_date_epoch(self):
+        """Set SOURCE_DATE_EPOCH (for reproducible builds) if not already set."""
+
+        if "env" not in self:
+            self["env"] = {}
+        if self["env"].get("SOURCE_DATE_EPOCH") is None:
+            self["env"]["SOURCE_DATE_EPOCH"] = int(time.time())
+
+
+def prepare_output_dir(output_dir, force, simulate=False):
+    """Ensure that the output directory exists and is empty."""
+    logger = logging.getLogger(__script_name__)
+
+    if os.path.exists(output_dir) and os.listdir(output_dir):
+        if force:
+            logger.info(
+                "%s existing output directory '%s'.",
+                "Simulate removing" if simulate else "Removing",
+                output_dir,
+            )
+            if not simulate:
+                for content in os.listdir(output_dir):
+                    path = os.path.join(output_dir, content)
+                    try:
+                        shutil.rmtree(path)
+                    except NotADirectoryError:
+                        os.remove(path)
+        else:
+            logger.error(
+                "The output directory '%s' already exist and is not empty. "
+                "Use --force to remove it.",
+                output_dir,
+            )
+            return False
+
+    if not os.path.isdir(output_dir):
+        logger.info(
+            "%s output directory '%s'...",
+            "Simulate creating" if simulate else "Creating",
+            output_dir,
+        )
+        if not simulate:
+            os.makedirs(output_dir)
+
+    return True
+
+
+def main(argv):
+    """Call mmdebstrap with parameters specified in a YAML file."""
+    start_time = time.time()
+    args = parse_args(argv)
+    logging.basicConfig(level=args.log_level, format=LOG_FORMAT)
+    logger = logging.getLogger(__script_name__)
+
+    config = Config()
+    try:
+        config.add_command_line_arguments(args)
+        config.sanitize_packages()
+        config.set_source_date_epoch()
+        config.check()
+    except OSError:
+        sys.exit(1)
+    except ValueError as error:
+        logger.error("%s", error)
+        sys.exit(1)
+
+    if not args.output:
+        args.output = os.path.join(args.output_base_dir, config["name"])
+
+    if not prepare_output_dir(args.output, args.force, args.simulate):
+        sys.exit(1)
+    config.save(os.path.join(args.output, "config.yaml"), args.simulate)
+
+    # Set environment variables
+    for env, value in config.env_items():
+        if os.environ.get(env) != str(value):
+            logger.info("Setting environment variable %s=%s", env, value)
+            os.environ[env] = str(value)
+    if args.tmpdir:
+        os.environ["TMPDIR"] = args.tmpdir
+
+    mmdebstrap = config.get("mmdebstrap", {})
+
+    if "target" in mmdebstrap and "/" not in mmdebstrap["target"]:
+        mmdebstrap["target"] = os.path.join(args.output, mmdebstrap["target"])
+
+    if "LD_PRELOAD" in os.environ:
+        # gtk3-nocsd preloads libgtk3-nocsd.so.0 which fails on cross-builds
+        del os.environ["LD_PRELOAD"]
+
+    try:
+        Mmdebstrap(config).call(args.output, args.simulate)
+    except subprocess.CalledProcessError as error:
+        logger.info("Execution time: %s", duration_str(time.time() - start_time))
+        logger.error(
+            "mmdebstrap failed with exit code %i. See above for details.", error.returncode
+        )
+        sys.exit(1)
+
+    logger.info("Build successful in '%s'.", mmdebstrap["target"])
+    logger.info("Execution time: %s", duration_str(time.time() - start_time))
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

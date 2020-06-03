@@ -1,0 +1,9 @@
+mmdebstrap:
+  architectures:
+  - amd64
+  keyrings:
+  - /usr/share/keyrings/debian-archive-keyring.gpg
+  mode: unshare
+  suite: unstable
+  target: root.tar.xz
+  variant: minbase
