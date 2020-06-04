@@ -1,0 +1,4 @@
+Test-Command: cp -r examples tests "$AUTOPKGTEST_TMP" && cd "$AUTOPKGTEST_TMP" && ln -sf /usr/bin/bdebstrap bdebstrap.py && python3 -m unittest discover -v
+Depends: bdebstrap, pylint (>= 2.2.2-2~) | pylint3, python3-flake8
+Restrictions: allow-stderr
+Features: test-name=unittest

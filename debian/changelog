@@ -1,0 +1,5 @@
+bdebstrap (0.1-1) unstable; urgency=medium
+
+  * Initial version. (Closes: #962140)
+
+ -- Benjamin Drung <bdrung@debian.org>  Wed, 03 Jun 2020 19:35:59 +0200

@@ -1,0 +1,28 @@
+Source: bdebstrap
+Section: admin
+Priority: optional
+Maintainer: Benjamin Drung <bdrung@debian.org>
+Build-Depends: debhelper-compat (= 13),
+               dh-python,
+               pandoc,
+               pylint (>= 2.2.2-2~) | pylint3,
+               python3,
+               python3-flake8,
+               python3-ruamel.yaml,
+               python3-setuptools
+Standards-Version: 4.5.0
+Homepage: https://github.com/bdrung/bdebstrap
+Rules-Requires-Root: no
+Vcs-Browser: https://github.com/bdrung/bdedstrap
+Vcs-Git: https://github.com/bdrung/bdebstrap.git -b debian/master
+
+Package: bdebstrap
+Architecture: all
+Depends: mmdebstrap (>= 0.6.0), ${misc:Depends}, ${python3:Depends}
+Description: YAML config based multi-mirror Debian chroot creation tool
+ bdebstrap is an alternative to debootstrap and a wrapper around mmdebstrap to
+ support YAML based configuration files. It inherits all benefits from
+ mmdebstrap. The support for configuration allows storing all customization in
+ a YAML file instead of having to use a very long one-liner call to mmdebstrap.
+ It also layering multiple customizations on top of each other, e.g. to support
+ flavors of an image.
