@@ -369,6 +369,13 @@ class TestConfig(unittest.TestCase):
             config.set_source_date_epoch()
         self.assertEqual(config.source_date_epoch, 1581694618)
 
+    def test_wrong_element_type(self):
+        """Test error message for wrong list element type."""
+        config = Config()
+        config.load(os.path.join(TEST_CONFIG_DIR, "wrong-element-type.yaml"))
+        with self.assertRaisesRegex(ValueError, "'customize-hooks' has type 'CommentedMap'"):
+            config.check()
+
 
 class TestDictMerge(unittest.TestCase):
     """Unittests for dict_merge function."""

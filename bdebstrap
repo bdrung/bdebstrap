@@ -586,6 +586,14 @@ class Config(dict):
                         "Unexpected type '%s' for mmdebstrap option '%s'. "
                         "Excepted: %s." % (type(value), key, MMDEBSTRAP_OPTS[key])
                     )
+                if MMDEBSTRAP_OPTS[key] is list:
+                    # Check if list elements are strings
+                    for element in value:
+                        if not isinstance(element, str):
+                            raise ValueError(
+                                "Following list element of mmdebstrap option '%s' has type '%s' "
+                                "instead of string: %s" % (key, type(element).__name__, element)
+                            )
         else:
             self.logger.warning("The configuration does not contain a 'mmdebstrap' entry.")
 
