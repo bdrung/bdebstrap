@@ -110,6 +110,28 @@ class TestArguments(unittest.TestCase):
         with self.assertRaises(SystemExit):
             parse_args(["--env", "invalid"])
 
+    def test_mirrors_with_spaces(self):
+        """Test --mirrors with leading/trailing spaces."""
+        args = parse_args(
+            [
+                "--mirrors",
+                "  deb http://deb.debian.org/debian unstable main\t ,  \t, "
+                "deb http://deb.debian.org/debian unstable non-free\t",
+                "--mirrors",
+                "\tdeb http://deb.debian.org/debian unstable contrib ",
+            ]
+        )
+        self.assertDictContainsSubset(
+            {
+                "mirrors": [
+                    "deb http://deb.debian.org/debian unstable main",
+                    "deb http://deb.debian.org/debian unstable non-free",
+                    "deb http://deb.debian.org/debian unstable contrib",
+                ],
+            },
+            args.__dict__,
+        )
+
     def test_optional_args(self):
         """Test optional arguments (which also have positional ones)."""
         args = parse_args(
@@ -346,6 +368,13 @@ class TestConfig(unittest.TestCase):
         with unittest.mock.patch("time.time", return_value=1581694618.0388665):
             config.set_source_date_epoch()
         self.assertEqual(config.source_date_epoch, 1581694618)
+
+    def test_wrong_element_type(self):
+        """Test error message for wrong list element type."""
+        config = Config()
+        config.load(os.path.join(TEST_CONFIG_DIR, "wrong-element-type.yaml"))
+        with self.assertRaisesRegex(ValueError, "'customize-hooks' has type 'CommentedMap'"):
+            config.check()
 
 
 class TestDictMerge(unittest.TestCase):
