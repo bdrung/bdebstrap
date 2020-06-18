@@ -110,6 +110,28 @@ class TestArguments(unittest.TestCase):
         with self.assertRaises(SystemExit):
             parse_args(["--env", "invalid"])
 
+    def test_mirrors_with_spaces(self):
+        """Test --mirrors with leading/trailing spaces."""
+        args = parse_args(
+            [
+                "--mirrors",
+                "  deb http://deb.debian.org/debian unstable main\t ,  \t, "
+                "deb http://deb.debian.org/debian unstable non-free\t",
+                "--mirrors",
+                "\tdeb http://deb.debian.org/debian unstable contrib ",
+            ]
+        )
+        self.assertDictContainsSubset(
+            {
+                "mirrors": [
+                    "deb http://deb.debian.org/debian unstable main",
+                    "deb http://deb.debian.org/debian unstable non-free",
+                    "deb http://deb.debian.org/debian unstable contrib",
+                ],
+            },
+            args.__dict__,
+        )
+
     def test_optional_args(self):
         """Test optional arguments (which also have positional ones)."""
         args = parse_args(
