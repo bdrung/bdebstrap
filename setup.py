@@ -69,7 +69,7 @@ class CleanCommand(distutils.command.clean.clean):
 if __name__ == "__main__":
     setup(
         name="bdebstrap",
-        version="0.1",
+        version="0.1.1",
         description="Benjamin's multi-mirror Debian chroot creation tool",
         long_description=("TODO"),
         author="Benjamin Drung",
