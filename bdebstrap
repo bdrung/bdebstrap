@@ -421,11 +421,17 @@ def parse_args(args):  # pylint: disable=too-many-statements
     args.env = env_dict
 
     if args.packages:
-        args.packages = [p for l in args.packages for p in re.split(",| ", l) if p]
+        args.packages = [
+            p for packages_list in args.packages for p in re.split(",| ", packages_list) if p
+        ]
     if args.components:
-        args.components = [c for l in args.components for c in re.split(",| ", l) if c]
+        args.components = [
+            c for component_list in args.components for c in re.split(",| ", component_list) if c
+        ]
     if args.architectures:
-        args.architectures = [a for l in args.architectures for a in re.split(",| ", l) if a]
+        args.architectures = [
+            a for arch_list in args.architectures for a in re.split(",| ", arch_list) if a
+        ]
     args.mirrors = [
         m.strip() for mirror_list in args.mirrors for m in mirror_list.split(",") if m.strip()
     ]
