@@ -342,6 +342,7 @@ mmdebstrap:
   - /usr/share/keyrings/debian-archive-keyring.gpg
   mode: unshare
   packages:
+  - init
   - iproute2
   - less
   - libpam-systemd
@@ -349,7 +350,6 @@ mmdebstrap:
   - live-boot
   - locales
   - openssh-server
-  - systemd-sysv
   suite: buster
   target: root.squashfs
   variant: minbase
