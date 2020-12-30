@@ -254,10 +254,12 @@ def main():
             second_parted_script += ["set", str(partition_number), flag, "on"]
         partition_number += 1
     check_call(cmd, args.dry_run)
-    if second_parted_script:
-        check_call(["parted", "--script", config["disk"]] + second_parted_script, args.dry_run)
     check_call(["sync"], args.dry_run)
     check_call(["udevadm", "settle"], args.dry_run)
+    if second_parted_script:
+        check_call(["parted", "--script", config["disk"]] + second_parted_script, args.dry_run)
+        check_call(["sync"], args.dry_run)
+        check_call(["udevadm", "settle"], args.dry_run)
 
     # Formatting
     for partition in config["partitions"]:
