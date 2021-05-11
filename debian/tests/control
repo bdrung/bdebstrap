@@ -2,3 +2,7 @@ Test-Command: cp -r examples tests "$AUTOPKGTEST_TMP" && cd "$AUTOPKGTEST_TMP" &
 Depends: bdebstrap, pylint (>= 2.2.2-2~) | pylint3, python3-flake8
 Restrictions: allow-stderr
 Features: test-name=unittest
+
+Tests: examples
+Depends: squashfs-tools-ng, ubuntu-keyring, @
+Restrictions: needs-root, allow-stderr

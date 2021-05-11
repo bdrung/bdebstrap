@@ -1,0 +1,47 @@
+#!/bin/sh
+set -eu
+
+check_existing() {
+    local directory="$1"
+    shift
+
+    for file in "$@"; do
+        if test ! -e "${directory}/${file}"; then
+            echo "Error: Expected generated file '${directory}/${file}' not found. Content of '${directory}':" >&2
+            ls "${directory}"
+            exit 1
+        fi
+    done
+}
+
+header() {
+    printf "\n+------------------------------------------------------------------------------+\n"
+    printf "| %-76s |\n" "$1"
+    printf "+------------------------------------------------------------------------------+\n\n"
+}
+
+# change to temporary directory to not interfere with the source
+cd "$AUTOPKGTEST_TMP"
+
+header "Example 1: Minimal Debian unstable tarball"
+bdebstrap -c /usr/share/doc/bdebstrap/examples/Debian-unstable.yaml --name example1 --mode root
+check_existing example1 config.yaml manifest root.tar.xz
+rm -r example1
+
+header "Example 2: Debian live system"
+sed '/  - upload ~/d' /usr/share/doc/bdebstrap/examples/Debian-buster-live.yaml > Debian-buster-live.yaml
+bdebstrap -c Debian-buster-live.yaml --packages iputils-ping --name example2 --mode root
+check_existing example2 config.yaml initrd.img manifest root.squashfs vmlinuz
+xattr=$(rdsquashfs -x /bin/ping example2/root.squashfs)
+if test -z "$xattr"; then
+    echo "Error: /bin/ping from example2/root.squashfs lacks security xattrs!" >&2
+    return 1
+else
+    echo "Info: /bin/ping has xattrs: $xattr"
+fi
+rm -r example2
+
+header "Example 3: Minimal Ubuntu 20.04 LTS tarball"
+bdebstrap -c /usr/share/doc/bdebstrap/examples/Ubuntu-20.04.yaml --name example3 --mode root
+check_existing example3 config.yaml manifest root.tar.xz
+rm -r example3
