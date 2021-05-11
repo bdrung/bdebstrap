@@ -13,7 +13,7 @@ Build-Depends: debhelper-compat (= 13),
 Standards-Version: 4.5.0
 Homepage: https://github.com/bdrung/bdebstrap
 Rules-Requires-Root: no
-Vcs-Browser: https://github.com/bdrung/bdedstrap
+Vcs-Browser: https://github.com/bdrung/bdebstrap
 Vcs-Git: https://github.com/bdrung/bdebstrap.git -b debian/master
 
 Package: bdebstrap
