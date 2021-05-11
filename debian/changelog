@@ -1,3 +1,12 @@
+bdebstrap (0.1.1-2) unstable; urgency=medium
+
+  * Fix typo in Vcs-Browser URL
+  * Add autopkgtest for example configs (requires fixed mmdebstrap 0.7.5-2.2)
+  * Bump Standards-Version to 4.5.1
+  * Add upstream metadata file
+
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 11 May 2021 13:40:52 +0200
+
 bdebstrap (0.1.1-1) unstable; urgency=medium
 
   * New upstream release.
