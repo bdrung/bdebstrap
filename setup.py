@@ -80,7 +80,7 @@ if __name__ == "__main__":
         author_email="bdrung@posteo.de",
         url="https://github.com/bdrung/bdebstrap",
         project_urls={"Bug Tracker": "https://github.com/bdrung/bdebstrap/issues"},
-        license="MIT",
+        license="ISC",
         cmdclass={"doc": DocCommand, "build": BuildCommand, "clean": CleanCommand},
         install_requires=["ruamel.yaml"],
         scripts=["bdebstrap"],

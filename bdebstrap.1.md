@@ -3,7 +3,7 @@ date: 2020-05-26
 footer: bdebstrap
 header: "bdebstrap's Manual"
 layout: page
-license: 'Licensed under the MIT license'
+license: 'Licensed under the ISC license'
 section: 1
 title: BDEBSTRAP
 ---
