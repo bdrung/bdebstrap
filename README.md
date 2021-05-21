@@ -132,6 +132,7 @@ Prerequisites
 
 The test cases have additional Python module requirements:
 
+* black
 * flake8
 * isort
 * pylint
