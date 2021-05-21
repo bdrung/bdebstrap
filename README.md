@@ -1,3 +1,10 @@
+[![CI](https://img.shields.io/github/workflow/status/bdrung/bdebstrap/CI)](https://github.com/bdrung/bdebstrap/actions/workflows/ci.yaml)
+[![Codecov](https://img.shields.io/codecov/c/github/bdrung/bdebstrap)](https://codecov.io/gh/bdrung/bdebstrap)
+[![Code Style: black](https://img.shields.io/badge/code%20style-black-black)](https://github.com/psf/black)
+[![License: ISC](https://img.shields.io/badge/license-ISC-blue)](LICENSE)
+[![Debian package](https://img.shields.io/debian/v/bdebstrap/unstable)](https://tracker.debian.org/pkg/bdebstrap)
+[![Ubuntu package](https://img.shields.io/ubuntu/v/bdebstrap)](https://launchpad.net/ubuntu/+source/bdebstrap)
+
 bdebstrap
 =========
 
