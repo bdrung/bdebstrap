@@ -133,6 +133,7 @@ Prerequisites
 The test cases have additional Python module requirements:
 
 * flake8
+* isort
 * pylint
 
 Thanks
