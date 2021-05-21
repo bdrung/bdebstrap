@@ -156,8 +156,9 @@ for writing good commit messages.
 Creating releases
 =================
 
-To create a release, increase the version in `setup.py`, document the
-noteworthy changes in `NEWS`, and commit the change. Tag the release:
+This project uses [semantic versioning](https://semver.org/). To create a
+release, increase the version in `setup.py`, document the noteworthy changes
+in `NEWS`, and commit the change. Tag the release:
 
 ```
 git tag v$(./setup.py --version)
