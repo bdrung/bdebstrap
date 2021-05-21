@@ -127,8 +127,10 @@ class Mmdebstrap:
         self.logger.info("Calling %s", escape_cmd(cmd))
         subprocess.check_call(cmd)
 
-        for file in (os.path.join(output_dir, "manifest"),
-                     self.config.get("mmdebstrap", {}).get("target", "")):
+        for file in (
+            os.path.join(output_dir, "manifest"),
+            self.config.get("mmdebstrap", {}).get("target", ""),
+        ):
             if os.path.isfile(file):
                 clamp_mtime(file, self.config.source_date_epoch)
 
@@ -286,7 +288,7 @@ def parse_args(args):  # pylint: disable=too-many-statements
         "--dpkgopt", action="append", help="Pass arbitrary options or configuration files to dpkg."
     )
     parser.add_argument(
-        "--hostname", help="Write the given HOSTNAME into /etc/hostname in the target chroot.",
+        "--hostname", help="Write the given HOSTNAME into /etc/hostname in the target chroot."
     )
     parser.add_argument(
         "--install-recommends",
@@ -474,11 +476,17 @@ def dict_merge(this, other):
     :return: None
     """
     for key in other.keys():
-        if (key in this and isinstance(this[key], collections.abc.MutableMapping)
-                and isinstance(other[key], collections.abc.Mapping)):
+        if (
+            key in this
+            and isinstance(this[key], collections.abc.MutableMapping)
+            and isinstance(other[key], collections.abc.Mapping)
+        ):
             dict_merge(this[key], other[key])
-        elif (key in this and isinstance(this[key], collections.abc.MutableSequence)
-              and isinstance(other[key], collections.abc.Sequence)):
+        elif (
+            key in this
+            and isinstance(this[key], collections.abc.MutableSequence)
+            and isinstance(other[key], collections.abc.Sequence)
+        ):
             this[key] += other[key]
         else:
             this[key] = other[key]
