@@ -67,11 +67,15 @@ class CleanCommand(distutils.command.clean.clean):
 
 
 if __name__ == "__main__":
+    with open("README.md", "r", encoding="utf-8") as fh:
+        LONG_DESCRIPTION = fh.read()
+
     setup(
         name="bdebstrap",
         version="0.1.1",
         description="Benjamin's multi-mirror Debian chroot creation tool",
-        long_description=("TODO"),
+        long_description=LONG_DESCRIPTION,
+        long_description_content_type="text/markdown",
         author="Benjamin Drung",
         author_email="bdrung@posteo.de",
         url="https://github.com/bdrung/bdebstrap",
