@@ -399,4 +399,4 @@ mmdebstrap(1), debootstrap(8)
 
 # AUTHOR
 
-Benjamin Drung <benjamin.drung@cloud.ionos.com>
+Benjamin Drung <bdrung@posteo.de>
