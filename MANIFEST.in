@@ -1,0 +1,6 @@
+recursive-include tests *.py *.yaml pylint.conf
+include LICENSE
+include NEWS
+include bdebstrap.1.md
+include bdebstrap.py
+include examples/*.yaml
