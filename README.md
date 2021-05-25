@@ -71,6 +71,7 @@ mmdebstrap:
   - /usr/share/keyrings/debian-archive-keyring.gpg
   mode: unshare
   packages:
+  - init
   - iproute2
   - less
   - libpam-systemd # recommended by systemd and needed to not run into https://bugs.debian.org/751636
@@ -78,7 +79,6 @@ mmdebstrap:
   - live-boot
   - locales
   - openssh-server
-  - systemd-sysv # Use systemd as init system (otherwise /sbin/init would be missing)
   suite: buster
   target: root.squashfs
   variant: minbase
