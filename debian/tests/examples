@@ -29,8 +29,8 @@ check_existing example1 config.yaml manifest root.tar.xz
 rm -r example1
 
 header "Example 2: Debian live system"
-sed '/  - upload ~/d' /usr/share/doc/bdebstrap/examples/Debian-buster-live.yaml > Debian-buster-live.yaml
-bdebstrap -c Debian-buster-live.yaml --packages iputils-ping --name example2 --mode root
+sed '/  - upload ~/d' /usr/share/doc/bdebstrap/examples/Debian-bullseye-live.yaml > Debian-bullseye-live.yaml
+bdebstrap -c Debian-bullseye-live.yaml --packages iputils-ping --name example2 --mode root
 check_existing example2 config.yaml initrd.img manifest root.squashfs vmlinuz
 xattr=$(rdsquashfs -x /bin/ping example2/root.squashfs)
 if test -z "$xattr"; then
