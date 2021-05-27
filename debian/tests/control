@@ -8,5 +8,9 @@ Restrictions: allow-stderr
 Features: test-name=unittest
 
 Tests: examples
-Depends: debian-archive-keyring, squashfs-tools-ng, ubuntu-keyring, @
+Depends: debian-archive-keyring,
+         distro-info-data,
+         squashfs-tools-ng,
+         ubuntu-keyring,
+         @
 Restrictions: needs-root, allow-stderr
