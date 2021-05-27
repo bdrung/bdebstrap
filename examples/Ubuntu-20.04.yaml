@@ -1,8 +1,6 @@
 mmdebstrap:
   keyrings:
   - /usr/share/keyrings/ubuntu-archive-keyring.gpg
-  mirrors:
-  - http://archive.ubuntu.com/ubuntu
   mode: unshare
   suite: focal
   target: root.tar.xz
