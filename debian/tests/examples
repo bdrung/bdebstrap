@@ -57,6 +57,13 @@ fi
 rm -r example2
 
 header "Example 3: Minimal Ubuntu 20.04 LTS tarball"
-bdebstrap -c /usr/share/doc/bdebstrap/examples/Ubuntu-20.04.yaml --name example3 --mode root
-check_existing example3 config.yaml manifest root.tar.xz
-rm -r example3
+case "$DEB_HOST_ARCH" in
+    amd64|arm64|armhf|i386|ppc64el|riscv64|s390x)
+        bdebstrap -c /usr/share/doc/bdebstrap/examples/Ubuntu-20.04.yaml --name example3 --mode root
+        check_existing example3 config.yaml manifest root.tar.xz
+        rm -r example3
+        ;;
+    *)
+        echo "Info: Skipping this example, because Ubuntu does not support architecture ${DEB_HOST_ARCH}."
+        ;;
+esac
