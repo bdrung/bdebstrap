@@ -332,7 +332,7 @@ mmdebstrap:
   - cp /dev/null "$1/etc/hostname"
   - if test -f "$1/etc/resolv.conf"; then cp /dev/null "$1/etc/resolv.conf"; fi
   customize-hooks:
-  - cp --preserve=timestamps -v "$1"/boot/vmlinuz* "$1${BDEBSTRAP_OUTPUT_DIR?}/vmlinuz"
+  - cp --preserve=timestamps -v "$1"/boot/vmlinu* "$1${BDEBSTRAP_OUTPUT_DIR?}/vmlinuz"
   - cp --preserve=timestamps -v "$1"/boot/initrd.img* "$1${BDEBSTRAP_OUTPUT_DIR?}/initrd.img"
   - mkdir -p "$1/root/.ssh"
   - upload ~/.ssh/id_rsa.pub /root/.ssh/authorized_keys
