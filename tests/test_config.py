@@ -246,7 +246,6 @@ class TestConfig(unittest.TestCase):
             config,
             {
                 "mmdebstrap": {
-                    "architectures": ["amd64"],
                     "keyrings": ["/usr/share/keyrings/debian-archive-keyring.gpg"],
                     "mode": "unshare",
                     "suite": "unstable",
@@ -296,7 +295,7 @@ class TestConfig(unittest.TestCase):
             {
                 "mmdebstrap": {
                     "aptopts": ['Apt::Install-Recommends "0"'],
-                    "architectures": ["amd64", "i386"],
+                    "architectures": ["i386"],
                     "components": ["main", "non-free"],
                     "dpkgopts": ["force-confdef", "force-confold"],
                     "keyrings": [
@@ -351,7 +350,6 @@ class TestConfig(unittest.TestCase):
             config,
             {
                 "mmdebstrap": {
-                    "architectures": ["amd64"],
                     "keyrings": ["/usr/share/keyrings/debian-archive-keyring.gpg"],
                     "mode": "unshare",
                     "suite": "unstable",

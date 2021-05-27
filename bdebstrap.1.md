@@ -303,8 +303,6 @@ Debian unstable tarball. Assume following configuration is stored in
 
 ```yaml
 mmdebstrap:
-  architectures:
-  - amd64
   keyrings:
   - /usr/share/keyrings/debian-archive-keyring.gpg
   mode: unshare
