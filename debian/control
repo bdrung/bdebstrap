@@ -2,8 +2,10 @@ Source: bdebstrap
 Section: admin
 Priority: optional
 Maintainer: Benjamin Drung <bdrung@debian.org>
-Build-Depends: debhelper-compat (= 13),
+Build-Depends: black,
+               debhelper-compat (= 13),
                dh-python,
+               isort,
                pandoc,
                pylint (>= 2.2.2-2~) | pylint3,
                python3,
