@@ -3,7 +3,7 @@ date: 2020-05-26
 footer: bdebstrap
 header: "bdebstrap's Manual"
 layout: page
-license: 'Licensed under the MIT license'
+license: 'Licensed under the ISC license'
 section: 1
 title: BDEBSTRAP
 ---
@@ -303,8 +303,6 @@ Debian unstable tarball. Assume following configuration is stored in
 
 ```yaml
 mmdebstrap:
-  architectures:
-  - amd64
   keyrings:
   - /usr/share/keyrings/debian-archive-keyring.gpg
   mode: unshare
@@ -323,8 +321,8 @@ config.yaml  manifest  root.tar.xz
 
 ### Debian live system
 
-This example shows how to use a YAML configuration to build a Debian 10
-(buster) live system. Assume following configuration is stored in *live.yaml*:
+This example shows how to use a YAML configuration to build a Debian 11
+(bullseye) live system. Assume following configuration is stored in *live.yaml*:
 
 ```yaml
 mmdebstrap:
@@ -334,7 +332,7 @@ mmdebstrap:
   - cp /dev/null "$1/etc/hostname"
   - if test -f "$1/etc/resolv.conf"; then cp /dev/null "$1/etc/resolv.conf"; fi
   customize-hooks:
-  - cp --preserve=timestamps -v "$1"/boot/vmlinuz* "$1${BDEBSTRAP_OUTPUT_DIR?}/vmlinuz"
+  - cp --preserve=timestamps -v "$1"/boot/vmlinu* "$1${BDEBSTRAP_OUTPUT_DIR?}/vmlinuz"
   - cp --preserve=timestamps -v "$1"/boot/initrd.img* "$1${BDEBSTRAP_OUTPUT_DIR?}/initrd.img"
   - mkdir -p "$1/root/.ssh"
   - upload ~/.ssh/id_rsa.pub /root/.ssh/authorized_keys
@@ -342,6 +340,7 @@ mmdebstrap:
   - /usr/share/keyrings/debian-archive-keyring.gpg
   mode: unshare
   packages:
+  - init
   - iproute2
   - less
   - libpam-systemd
@@ -349,8 +348,7 @@ mmdebstrap:
   - live-boot
   - locales
   - openssh-server
-  - systemd-sysv
-  suite: buster
+  suite: bullseye
   target: root.squashfs
   variant: minbase
 ```
@@ -399,4 +397,4 @@ mmdebstrap(1), debootstrap(8)
 
 # AUTHOR
 
-Benjamin Drung <benjamin.drung@cloud.ionos.com>
+Benjamin Drung <bdrung@posteo.de>

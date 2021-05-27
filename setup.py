@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Copyright (C) 2019, Benjamin Drung <bdrung@posteo.de>
+# Copyright (C) 2019-2021, Benjamin Drung <bdrung@posteo.de>
 #
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -67,15 +67,34 @@ class CleanCommand(distutils.command.clean.clean):
 
 
 if __name__ == "__main__":
+    with open("README.md", "r", encoding="utf-8") as fh:
+        LONG_DESCRIPTION = fh.read()
+
     setup(
         name="bdebstrap",
-        version="0.1.1",
+        version="0.1.2",
         description="Benjamin's multi-mirror Debian chroot creation tool",
-        long_description=("TODO"),
+        long_description=LONG_DESCRIPTION,
+        long_description_content_type="text/markdown",
         author="Benjamin Drung",
         author_email="bdrung@posteo.de",
         url="https://github.com/bdrung/bdebstrap",
-        license="MIT",
+        project_urls={"Bug Tracker": "https://github.com/bdrung/bdebstrap/issues"},
+        license="ISC",
+        classifiers=[
+            "Development Status :: 5 - Production/Stable",
+            "Environment :: Console",
+            "License :: OSI Approved :: ISC License (ISCL)",
+            "Operating System :: POSIX",
+            "Programming Language :: Python :: 3",
+            "Programming Language :: Python :: 3 :: Only",
+            "Programming Language :: Python :: 3.4",
+            "Programming Language :: Python :: 3.5",
+            "Programming Language :: Python :: 3.6",
+            "Programming Language :: Python :: 3.7",
+            "Programming Language :: Python :: 3.8",
+            "Programming Language :: Python :: 3.9",
+        ],
         cmdclass={"doc": DocCommand, "build": BuildCommand, "clean": CleanCommand},
         install_requires=["ruamel.yaml"],
         scripts=["bdebstrap"],
