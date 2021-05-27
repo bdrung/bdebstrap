@@ -30,6 +30,21 @@ rm -r example1
 
 header "Example 2: Debian live system"
 sed '/  - upload ~/d' /usr/share/doc/bdebstrap/examples/Debian-bullseye-live.yaml > Debian-bullseye-live.yaml
+DEB_HOST_ARCH=$(dpkg-architecture -q DEB_HOST_ARCH)
+if test "$DEB_HOST_ARCH" != amd64; then
+    # Use host architecture to avoid testing building for foreign architecture
+    case "$DEB_HOST_ARCH" in
+        arm64) kernel="linux-image-cloud-arm64" ;;
+        armel) kernel="linux-image-rpi" ;;
+        armhf) kernel="linux-image-armmp-lpae" ;;
+        i386) kernel="linux-image-686-pae" ;;
+        mips64el|mipsel) kernel="linux-image-octeon" ;;
+        ppc64el) kernel="linux-image-powerpc64le" ;;
+        *) kernel="linux-image-${DEB_HOST_ARCH}" ;;
+    esac
+    sed -i "s/linux-image-cloud-amd64/${kernel}/" Debian-bullseye-live.yaml
+    sed -i "s/amd64/${DEB_HOST_ARCH}/" Debian-bullseye-live.yaml
+fi
 bdebstrap -c Debian-bullseye-live.yaml --packages iputils-ping --name example2 --mode root
 check_existing example2 config.yaml initrd.img manifest root.squashfs vmlinuz
 xattr=$(rdsquashfs -x /bin/ping example2/root.squashfs)
