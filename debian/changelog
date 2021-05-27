@@ -1,3 +1,18 @@
+bdebstrap (0.1.2-1) unstable; urgency=medium
+
+  [ Benjamin Drung ]
+  * New upstream release
+  * Build-depend on black and isort
+  * d/t/examples: Update Debian live system test to bullseye
+  * d/t/examples: Build examples for host architecture
+  * d/t/examples: Run Ubuntu example only for supported archs
+  * d/t/control: Depend on distro-info-data to detect Ubuntu codename
+
+  [ Lucas Kanashiro ]
+  * d/t/control: Add debian-archive-keyring as a dependency of examples test
+
+ -- Benjamin Drung <bdrung@debian.org>  Thu, 27 May 2021 19:53:36 +0200
+
 bdebstrap (0.1.1-2) unstable; urgency=medium
 
   * Fix typo in Vcs-Browser URL
