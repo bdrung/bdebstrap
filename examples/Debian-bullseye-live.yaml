@@ -23,6 +23,6 @@ mmdebstrap:
   - live-boot
   - locales
   - openssh-server
-  suite: buster
+  suite: bullseye
   target: root.squashfs
   variant: minbase

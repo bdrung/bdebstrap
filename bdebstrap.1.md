@@ -321,8 +321,8 @@ config.yaml  manifest  root.tar.xz
 
 ### Debian live system
 
-This example shows how to use a YAML configuration to build a Debian 10
-(buster) live system. Assume following configuration is stored in *live.yaml*:
+This example shows how to use a YAML configuration to build a Debian 11
+(bullseye) live system. Assume following configuration is stored in *live.yaml*:
 
 ```yaml
 mmdebstrap:
@@ -348,7 +348,7 @@ mmdebstrap:
   - live-boot
   - locales
   - openssh-server
-  suite: buster
+  suite: bullseye
   target: root.squashfs
   variant: minbase
 ```
