@@ -70,3 +70,14 @@ class TestMain(unittest.TestCase):
         config_save_mock.assert_called_once_with("./foobar/config.yaml", False)
         mmdebstrap_call_mock.assert_called_once_with("./foobar", False)
         prepare_output_dir_mock.assert_called_once_with("./foobar", False, False)
+
+    @unittest.mock.patch("bdebstrap.Config.save")
+    @unittest.mock.patch("bdebstrap.prepare_output_dir")
+    @unittest.mock.patch("bdebstrap.Mmdebstrap.call")
+    def test_empty_target(self, mmdebstrap_call_mock, prepare_output_dir_mock, config_save_mock):
+        """Test keeping target empty."""
+        with self.assertLogs("bdebstrap", level="INFO"):
+            self.assertEqual(main(["--name", "empty-target", "unstable"]), 0)
+        config_save_mock.assert_called_once_with("./empty-target/config.yaml", False)
+        mmdebstrap_call_mock.assert_called_once_with("./empty-target", False)
+        prepare_output_dir_mock.assert_called_once_with("./empty-target", False, False)

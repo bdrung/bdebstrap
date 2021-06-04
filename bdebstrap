@@ -766,7 +766,10 @@ def main(argv):
         )
         return 1
 
-    logger.info("Build successful in '%s'.", mmdebstrap["target"])
+    if mmdebstrap.get("target") in (None, "-"):
+        logger.info("Build successful and sent uncompressed tarball to standard output.")
+    else:
+        logger.info("Build successful in '%s'.", mmdebstrap["target"])
     logger.info("Execution time: %s", duration_str(time.time() - start_time))
     return 0
 
