@@ -127,14 +127,13 @@ class Mmdebstrap:
         self.logger.info("Calling %s", escape_cmd(cmd))
         subprocess.check_call(cmd)
 
-        for file in (
+        for path in (
             os.path.join(output_dir, "manifest"),
             self.config.get("mmdebstrap", {}).get("target", ""),
+            output_dir,
         ):
-            if os.path.isfile(file):
-                clamp_mtime(file, self.config.source_date_epoch)
-
-        clamp_mtime(output_dir, self.config.source_date_epoch)
+            if os.path.exists(path):
+                clamp_mtime(path, self.config.source_date_epoch)
 
 
 def clamp_mtime(path, source_date_epoch):
