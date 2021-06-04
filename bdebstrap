@@ -748,7 +748,7 @@ def main(argv):
 
     mmdebstrap = config.get("mmdebstrap", {})
 
-    if "target" in mmdebstrap and "/" not in mmdebstrap["target"]:
+    if mmdebstrap.get("target") not in (None, "-") and "/" not in mmdebstrap["target"]:
         mmdebstrap["target"] = os.path.join(args.output, mmdebstrap["target"])
 
     if "LD_PRELOAD" in os.environ:
