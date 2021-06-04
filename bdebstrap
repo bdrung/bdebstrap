@@ -189,7 +189,6 @@ def sanitize_list(list_):
 def parse_args(args):  # pylint: disable=too-many-statements
     """Parse the given command line arguments."""
     parser = argparse.ArgumentParser(description=__doc__)
-    # parser.add_argument("-t", "--target", help="path to a tarball filename or a directory")
     # parser.add_argument("-m", "--manifest", help="Store packages manifest in given file")
     parser.add_argument(
         "-c", "--config", action="append", default=[], help="bdebstrap configuration YAML."
