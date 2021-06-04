@@ -728,16 +728,16 @@ def main(argv):
         config.set_source_date_epoch()
         config.check()
     except OSError:
-        sys.exit(1)
+        return 1
     except ValueError as error:
         logger.error("%s", error)
-        sys.exit(1)
+        return 1
 
     if not args.output:
         args.output = os.path.join(args.output_base_dir, config["name"])
 
     if not prepare_output_dir(args.output, args.force, args.simulate):
-        sys.exit(1)
+        return 1
     config.save(os.path.join(args.output, "config.yaml"), args.simulate)
 
     # Set environment variables
@@ -764,11 +764,12 @@ def main(argv):
         logger.error(
             "mmdebstrap failed with exit code %i. See above for details.", error.returncode
         )
-        sys.exit(1)
+        return 1
 
     logger.info("Build successful in '%s'.", mmdebstrap["target"])
     logger.info("Execution time: %s", duration_str(time.time() - start_time))
+    return 0
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    sys.exit(main(sys.argv[1:]))
