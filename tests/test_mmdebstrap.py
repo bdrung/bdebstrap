@@ -14,15 +14,22 @@
 
 """Test Mmdebstrap class of bdebstrap."""
 
+import logging
 import unittest
 
-from bdebstrap import Mmdebstrap
+from bdebstrap import Mmdebstrap, __script_name__
 
 
 class TestMmdebstrap(unittest.TestCase):
     """
     This unittest class tests the Mmdebstrap object.
     """
+
+    maxDiff = None
+
+    @staticmethod
+    def setUp():
+        logging.getLogger(__script_name__).setLevel(logging.WARNING)
 
     def test_debian_example(self):
         """Test Mmdebstrap with Debian unstable config."""
@@ -43,7 +50,6 @@ class TestMmdebstrap(unittest.TestCase):
             mmdebstrap.construct_parameters("/output"),
             [
                 "mmdebstrap",
-                "-v",
                 "--variant=minbase",
                 "--mode=unshare",
                 "--keyring=/usr/share/keyrings/debian-archive-keyring.gpg",
@@ -66,7 +72,6 @@ class TestMmdebstrap(unittest.TestCase):
             mmdebstrap.construct_parameters("/output", True),
             [
                 "mmdebstrap",
-                "-v",
                 "--simulate",
                 '--essential-hook=mkdir -p "$1/tmp/bdebstrap-output"',
                 "--customize-hook=chroot \"$1\" dpkg-query -f='${Package}\\t${Version}\\n' -W "
@@ -99,7 +104,6 @@ class TestMmdebstrap(unittest.TestCase):
             mmdebstrap.construct_parameters("/output"),
             [
                 "mmdebstrap",
-                "-v",
                 '--essential-hook=mkdir -p "$1/tmp/bdebstrap-output"',
                 "--essential-hook=copy-in /etc/bash.bashrc /etc",
                 '--customize-hook=chroot "$0" update-alternatives --set editor /usr/bin/vim.basic',
@@ -132,7 +136,6 @@ class TestMmdebstrap(unittest.TestCase):
             mmdebstrap.construct_parameters("/output"),
             [
                 "mmdebstrap",
-                "-v",
                 '--aptopt=Acquire::http { Proxy "http://proxy:3128/"; }',
                 "--dpkgopt=force-confdef",
                 "--dpkgopt=force-confold",
@@ -146,4 +149,33 @@ class TestMmdebstrap(unittest.TestCase):
                 "unstable",
                 "example.tar.xz",
             ],
+        )
+
+    def test_log_level_debug(self):
+        """Test Mmdebstrap with log level debug."""
+        logging.getLogger(__script_name__).setLevel(logging.DEBUG)
+        mmdebstrap = Mmdebstrap({})
+        self.assertEqual(
+            mmdebstrap.construct_parameters("/output")[0:2], ["mmdebstrap", "--debug"]
+        )
+
+    def test_log_level_error(self):
+        """Test Mmdebstrap with log level error."""
+        logging.getLogger(__script_name__).setLevel(logging.ERROR)
+        mmdebstrap = Mmdebstrap({})
+        self.assertEqual(mmdebstrap.construct_parameters("/output")[0:2], ["mmdebstrap", "-q"])
+
+    def test_log_level_info(self):
+        """Test Mmdebstrap with log level info."""
+        logging.getLogger(__script_name__).setLevel(logging.INFO)
+        mmdebstrap = Mmdebstrap({})
+        self.assertEqual(mmdebstrap.construct_parameters("/output")[0:2], ["mmdebstrap", "-v"])
+
+    def test_log_level_warning(self):
+        """Test Mmdebstrap with log level warning."""
+        logging.getLogger(__script_name__).setLevel(logging.WARNING)
+        mmdebstrap = Mmdebstrap({})
+        self.assertEqual(
+            mmdebstrap.construct_parameters("/output")[0:2],
+            ["mmdebstrap", '--essential-hook=mkdir -p "$1/tmp/bdebstrap-output"'],
         )
