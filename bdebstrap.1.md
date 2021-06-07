@@ -18,7 +18,8 @@ bdebstrap - YAML config based multi-mirror Debian chroot creation tool
 [**-n**|**\--name** *NAME*] [**-e**|**\--env** *ENV*]
 [**-s**|**\--simulate**|**\--dry-run**]
 [**-b**|**\--output-base-dir** *OUTPUT_BASE_DIR*]
-[**-o**|**\--output** *OUTPUT*] [**\--debug**] [**-q**|**\--quiet**]
+[**-o**|**\--output** *OUTPUT*]
+[**-q**|**\--quiet**|**\--silent**|**\--debug**]
 [**-f**|**\--force**] [**-t**|**\--tmpdir** *TMPDIR*]
 [**\--variant** {*extract*,*custom*,*essential*,*apt*,*required*,*minbase*,*buildd*,*important*,*debootstrap*,*-*,*standard*}]
 [**\--mode** {*auto*,*sudo*,*root*,*unshare*,*fakeroot*,*fakechroot*,*proot*,*chrootless*}]
@@ -82,12 +83,12 @@ output directory as *config.yaml*.
 **-o** *OUTPUT*, **\--output** *OUTPUT*
 :   output directory (default: output-base-dir/name)
 
+**-q**, **\--quiet**, **\--silent**
+:   Decrease output verbosity to warnings and errors
+
 **\--debug**
 :   In addition to the output produced by **\--verbose**, write detailed
     debugging information to standard error.
-
-**-q**, **\--quiet**
-:   Decrease output verbosity to warnings and errors
 
 **-f**, **\--force**
 :   Remove existing output directory before creating a new one

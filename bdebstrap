@@ -213,6 +213,16 @@ def parse_args(args):  # pylint: disable=too-many-statements
     parser.add_argument("-b", "--output-base-dir", default=".", help="output base directory")
     parser.add_argument("-o", "--output", help="output directory (default: output-base-dir/name)")
     parser.add_argument(
+        "-q",
+        "--quiet",
+        "--silent",
+        dest="log_level",
+        help="Decrease output verbosity to warnings and errors",
+        action="store_const",
+        const=logging.WARNING,
+        default=logging.INFO,
+    )
+    parser.add_argument(
         "--debug",
         dest="log_level",
         help=(
@@ -221,15 +231,6 @@ def parse_args(args):  # pylint: disable=too-many-statements
         ),
         action="store_const",
         const=logging.DEBUG,
-        default=logging.INFO,
-    )
-    parser.add_argument(
-        "-q",
-        "--quiet",
-        dest="log_level",
-        help="Decrease output verbosity to warnings and errors",
-        action="store_const",
-        const=logging.WARNING,
     )
     parser.add_argument(
         "-f",
