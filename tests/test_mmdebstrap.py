@@ -15,9 +15,11 @@
 """Test Mmdebstrap class of bdebstrap."""
 
 import logging
+import os
 import unittest
+import unittest.mock
 
-from bdebstrap import Mmdebstrap, __script_name__
+from bdebstrap import Config, Mmdebstrap, __script_name__
 
 
 class TestMmdebstrap(unittest.TestCase):
@@ -150,6 +152,49 @@ class TestMmdebstrap(unittest.TestCase):
                 "example.tar.xz",
             ],
         )
+
+    @unittest.mock.patch("os.path.exists", unittest.mock.MagicMock(return_value=True))
+    @unittest.mock.patch("os.stat")
+    @unittest.mock.patch("os.utime")
+    def test_clamp_mtime(self, utime_mock, stat_mock):
+        """Test clamping mtime of output files/directories."""
+        stat_mock.return_value = os.stat_result(
+            (33261, 16535979, 64769, 1, 1000, 1000, 17081, 1581451059, 1581451059, 1581451059)
+        )
+        config = Config(
+            env={"SOURCE_DATE_EPOCH": 1581433737}, mmdebstrap={"target": "/output/test.tar"}
+        )
+        mmdebstrap = Mmdebstrap(config)
+        mmdebstrap.clamp_mtime("/output")
+        self.assertEqual(utime_mock.call_count, 3)
+
+    @unittest.mock.patch("os.path.exists", unittest.mock.MagicMock(return_value=True))
+    @unittest.mock.patch("os.stat")
+    @unittest.mock.patch("os.utime")
+    def test_clamp_mtime_permission(self, utime_mock, stat_mock):
+        """Test permission error when clamping mtime of output files/directories."""
+        stat_mock.return_value = os.stat_result(
+            (33261, 16535979, 64769, 1, 1000, 1000, 17081, 1581451059, 1581451059, 1581451059)
+        )
+        utime_mock.side_effect = PermissionError(1, "Operation not permitted")
+        config = Config(
+            env={"SOURCE_DATE_EPOCH": 1581433737}, mmdebstrap={"target": "/output/test.tar"}
+        )
+        mmdebstrap = Mmdebstrap(config)
+        with self.assertLogs("bdebstrap", level="ERROR") as context_manager:
+            mmdebstrap.clamp_mtime("/output")
+            self.assertEqual(utime_mock.call_count, 3)
+            self.assertEqual(
+                [
+                    "ERROR:bdebstrap:Failed to change modification time of '/output/manifest': "
+                    "[Errno 1] Operation not permitted",
+                    "ERROR:bdebstrap:Failed to change modification time of '/output/test.tar': "
+                    "[Errno 1] Operation not permitted",
+                    "ERROR:bdebstrap:Failed to change modification time of '/output': "
+                    "[Errno 1] Operation not permitted",
+                ],
+                context_manager.output,
+            )
 
     def test_log_level_debug(self):
         """Test Mmdebstrap with log level debug."""

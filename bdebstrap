@@ -133,14 +133,22 @@ class Mmdebstrap:
         cmd = self.construct_parameters(output_dir, simulate)
         self.logger.info("Calling %s", escape_cmd(cmd))
         subprocess.check_call(cmd)
+        self.clamp_mtime(output_dir)
 
+    def clamp_mtime(self, output_dir):
+        """Clamp the modification time of the manifest, target, and output directory."""
         for path in (
             os.path.join(output_dir, "manifest"),
             self.config.get("mmdebstrap", {}).get("target", ""),
             output_dir,
         ):
             if os.path.exists(path):
-                clamp_mtime(path, self.config.source_date_epoch)
+                try:
+                    clamp_mtime(path, self.config.source_date_epoch)
+                except OSError as error:
+                    self.logger.error(
+                        "Failed to change modification time of '%s': %s", path, error
+                    )
 
 
 def clamp_mtime(path, source_date_epoch):
