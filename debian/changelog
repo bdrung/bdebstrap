@@ -1,3 +1,15 @@
+bdebstrap (0.2.0-1) unstable; urgency=medium
+
+  * New upstream release:
+    - Fix KeyError: 'target' if no target was specified
+    - Fix passing --target=- (Closes: #989452)
+    - Add --silent as alias for --quiet
+    - Align log levels with mmdebstrap (Closes: #989450)
+    - Fix PermissionError exception when clamping mtime
+  * d/t/examples: Run bdebstrap with --verbose
+
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 08 Jun 2021 17:31:36 +0200
+
 bdebstrap (0.1.2-1) unstable; urgency=medium
 
   [ Benjamin Drung ]
