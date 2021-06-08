@@ -29,6 +29,11 @@ class TestArguments(unittest.TestCase):
     This unittest class tests the argument parsing.
     """
 
+    def test_debug(self):
+        """Test --debug argument parsing."""
+        args = parse_args(["--debug"])
+        self.assertEqual(args.log_level, logging.DEBUG)
+
     def test_empty_args(self):
         """Test setting arguments to empty strings."""
         args = parse_args(
@@ -84,7 +89,7 @@ class TestArguments(unittest.TestCase):
                 "hostname": None,
                 "install_recommends": False,
                 "keyring": None,
-                "log_level": logging.INFO,
+                "log_level": logging.WARNING,
                 "mirrors": [],
                 "mode": None,
                 "name": None,

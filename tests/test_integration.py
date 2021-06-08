@@ -42,10 +42,10 @@ class TestIntegration(unittest.TestCase):
         """Test building Debian unstable reproducible."""
         config = os.path.join(EXAMPLE_CONFIG_DIR, "Debian-unstable.yaml")
         # Build Debian unstable once.
-        main(["-c", config, "-b", BUILDS_DIR, "-n", "unstable"])
+        main(["-v", "-c", config, "-b", BUILDS_DIR, "-n", "unstable"])
         config = os.path.join(BUILDS_DIR, "unstable", "config.yaml")
         # Rebuild Debian unstable again.
-        main(["-c", config, "-o", os.path.join(BUILDS_DIR, "unstable-rebuild")])
+        main(["-v", "-c", config, "-o", os.path.join(BUILDS_DIR, "unstable-rebuild")])
         subprocess.check_call(
             [
                 "diffoscope",

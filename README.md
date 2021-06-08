@@ -163,10 +163,10 @@ Creating releases
 
 This project uses [semantic versioning](https://semver.org/). To create a
 release, increase the version in `setup.py` and document the noteworthy changes
-in `NEWS`. Then commit the changes and tag the release:
+in `NEWS.md`. Then commit the changes and tag the release:
 
 ```
-git commit -sm "Release bdebstrap $(./setup.py --version)" NEWS setup.py
+git commit -sm "Release bdebstrap $(./setup.py --version)" NEWS.md setup.py
 git tag v$(./setup.py --version)
 ```
 

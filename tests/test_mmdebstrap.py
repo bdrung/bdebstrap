@@ -14,15 +14,24 @@
 
 """Test Mmdebstrap class of bdebstrap."""
 
+import logging
+import os
 import unittest
+import unittest.mock
 
-from bdebstrap import Mmdebstrap
+from bdebstrap import Config, Mmdebstrap, __script_name__
 
 
 class TestMmdebstrap(unittest.TestCase):
     """
     This unittest class tests the Mmdebstrap object.
     """
+
+    maxDiff = None
+
+    @staticmethod
+    def setUp():
+        logging.getLogger(__script_name__).setLevel(logging.WARNING)
 
     def test_debian_example(self):
         """Test Mmdebstrap with Debian unstable config."""
@@ -43,7 +52,6 @@ class TestMmdebstrap(unittest.TestCase):
             mmdebstrap.construct_parameters("/output"),
             [
                 "mmdebstrap",
-                "-v",
                 "--variant=minbase",
                 "--mode=unshare",
                 "--keyring=/usr/share/keyrings/debian-archive-keyring.gpg",
@@ -66,7 +74,6 @@ class TestMmdebstrap(unittest.TestCase):
             mmdebstrap.construct_parameters("/output", True),
             [
                 "mmdebstrap",
-                "-v",
                 "--simulate",
                 '--essential-hook=mkdir -p "$1/tmp/bdebstrap-output"',
                 "--customize-hook=chroot \"$1\" dpkg-query -f='${Package}\\t${Version}\\n' -W "
@@ -99,7 +106,6 @@ class TestMmdebstrap(unittest.TestCase):
             mmdebstrap.construct_parameters("/output"),
             [
                 "mmdebstrap",
-                "-v",
                 '--essential-hook=mkdir -p "$1/tmp/bdebstrap-output"',
                 "--essential-hook=copy-in /etc/bash.bashrc /etc",
                 '--customize-hook=chroot "$0" update-alternatives --set editor /usr/bin/vim.basic',
@@ -132,7 +138,6 @@ class TestMmdebstrap(unittest.TestCase):
             mmdebstrap.construct_parameters("/output"),
             [
                 "mmdebstrap",
-                "-v",
                 '--aptopt=Acquire::http { Proxy "http://proxy:3128/"; }',
                 "--dpkgopt=force-confdef",
                 "--dpkgopt=force-confold",
@@ -146,4 +151,76 @@ class TestMmdebstrap(unittest.TestCase):
                 "unstable",
                 "example.tar.xz",
             ],
+        )
+
+    @unittest.mock.patch("os.path.exists", unittest.mock.MagicMock(return_value=True))
+    @unittest.mock.patch("os.stat")
+    @unittest.mock.patch("os.utime")
+    def test_clamp_mtime(self, utime_mock, stat_mock):
+        """Test clamping mtime of output files/directories."""
+        stat_mock.return_value = os.stat_result(
+            (33261, 16535979, 64769, 1, 1000, 1000, 17081, 1581451059, 1581451059, 1581451059)
+        )
+        config = Config(
+            env={"SOURCE_DATE_EPOCH": 1581433737}, mmdebstrap={"target": "/output/test.tar"}
+        )
+        mmdebstrap = Mmdebstrap(config)
+        mmdebstrap.clamp_mtime("/output")
+        self.assertEqual(utime_mock.call_count, 3)
+
+    @unittest.mock.patch("os.path.exists", unittest.mock.MagicMock(return_value=True))
+    @unittest.mock.patch("os.stat")
+    @unittest.mock.patch("os.utime")
+    def test_clamp_mtime_permission(self, utime_mock, stat_mock):
+        """Test permission error when clamping mtime of output files/directories."""
+        stat_mock.return_value = os.stat_result(
+            (33261, 16535979, 64769, 1, 1000, 1000, 17081, 1581451059, 1581451059, 1581451059)
+        )
+        utime_mock.side_effect = PermissionError(1, "Operation not permitted")
+        config = Config(
+            env={"SOURCE_DATE_EPOCH": 1581433737}, mmdebstrap={"target": "/output/test.tar"}
+        )
+        mmdebstrap = Mmdebstrap(config)
+        with self.assertLogs("bdebstrap", level="ERROR") as context_manager:
+            mmdebstrap.clamp_mtime("/output")
+            self.assertEqual(utime_mock.call_count, 3)
+            self.assertEqual(
+                [
+                    "ERROR:bdebstrap:Failed to change modification time of '/output/manifest': "
+                    "[Errno 1] Operation not permitted",
+                    "ERROR:bdebstrap:Failed to change modification time of '/output/test.tar': "
+                    "[Errno 1] Operation not permitted",
+                    "ERROR:bdebstrap:Failed to change modification time of '/output': "
+                    "[Errno 1] Operation not permitted",
+                ],
+                context_manager.output,
+            )
+
+    def test_log_level_debug(self):
+        """Test Mmdebstrap with log level debug."""
+        logging.getLogger(__script_name__).setLevel(logging.DEBUG)
+        mmdebstrap = Mmdebstrap({})
+        self.assertEqual(
+            mmdebstrap.construct_parameters("/output")[0:2], ["mmdebstrap", "--debug"]
+        )
+
+    def test_log_level_error(self):
+        """Test Mmdebstrap with log level error."""
+        logging.getLogger(__script_name__).setLevel(logging.ERROR)
+        mmdebstrap = Mmdebstrap({})
+        self.assertEqual(mmdebstrap.construct_parameters("/output")[0:2], ["mmdebstrap", "-q"])
+
+    def test_log_level_info(self):
+        """Test Mmdebstrap with log level info."""
+        logging.getLogger(__script_name__).setLevel(logging.INFO)
+        mmdebstrap = Mmdebstrap({})
+        self.assertEqual(mmdebstrap.construct_parameters("/output")[0:2], ["mmdebstrap", "-v"])
+
+    def test_log_level_warning(self):
+        """Test Mmdebstrap with log level warning."""
+        logging.getLogger(__script_name__).setLevel(logging.WARNING)
+        mmdebstrap = Mmdebstrap({})
+        self.assertEqual(
+            mmdebstrap.construct_parameters("/output")[0:2],
+            ["mmdebstrap", '--essential-hook=mkdir -p "$1/tmp/bdebstrap-output"'],
         )

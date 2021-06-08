@@ -18,7 +18,8 @@ bdebstrap - YAML config based multi-mirror Debian chroot creation tool
 [**-n**|**\--name** *NAME*] [**-e**|**\--env** *ENV*]
 [**-s**|**\--simulate**|**\--dry-run**]
 [**-b**|**\--output-base-dir** *OUTPUT_BASE_DIR*]
-[**-o**|**\--output** *OUTPUT*] [**\--debug**] [**-q**|**\--quiet**]
+[**-o**|**\--output** *OUTPUT*]
+[**-q**|**\--quiet**|**\--silent**|**-v**|**\--verbose**|**\--debug**]
 [**-f**|**\--force**] [**-t**|**\--tmpdir** *TMPDIR*]
 [**\--variant** {*extract*,*custom*,*essential*,*apt*,*required*,*minbase*,*buildd*,*important*,*debootstrap*,*-*,*standard*}]
 [**\--mode** {*auto*,*sudo*,*root*,*unshare*,*fakeroot*,*fakechroot*,*proot*,*chrootless*}]
@@ -82,12 +83,22 @@ output directory as *config.yaml*.
 **-o** *OUTPUT*, **\--output** *OUTPUT*
 :   output directory (default: output-base-dir/name)
 
+**-q**, **\--quiet**, **\--silent**
+:   Do not write anything to standard error except errors. If used together
+    with **\--verbose** or **\--debug**, only the last option will take effect.
+
+**-v**, **\--verbose**
+:   Write informational messages (about configuration files, environment
+    variables, mmdebstrap call, etc.) to standard error. Instead of progress
+    bars, **mmdebstrap** writes the dpkg and apt output directly to standard
+    error. If used together with **\--quiet** or **\--debug**, only the last
+    option will take effect.
+
 **\--debug**
 :   In addition to the output produced by **\--verbose**, write detailed
-    debugging information to standard error.
-
-**-q**, **\--quiet**
-:   Decrease output verbosity to warnings and errors
+    debugging information to standard error. Errors of **mmdebstrap** will
+    print a backtrace. If used together with **\--quiet** or **\--verbose**,
+    only the last option will take effect.
 
 **-f**, **\--force**
 :   Remove existing output directory before creating a new one

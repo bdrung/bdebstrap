@@ -68,7 +68,14 @@ class Mmdebstrap:
     def construct_parameters(self, output_dir, simulate=False):
         """Construct the parameter for mmdebstrap from a given dictionary."""
         # pylint: disable=too-many-branches
-        cmd = ["mmdebstrap", "-v"]
+        cmd = ["mmdebstrap"]
+        log_level = self.logger.getEffectiveLevel()
+        if log_level >= logging.ERROR:
+            cmd += ["-q"]
+        elif log_level <= logging.DEBUG:
+            cmd += ["--debug"]
+        elif log_level <= logging.INFO:
+            cmd += ["-v"]
         if simulate:
             cmd += ["--simulate"]
         mmdebstrap = self.config.get("mmdebstrap", {})
@@ -126,15 +133,22 @@ class Mmdebstrap:
         cmd = self.construct_parameters(output_dir, simulate)
         self.logger.info("Calling %s", escape_cmd(cmd))
         subprocess.check_call(cmd)
+        self.clamp_mtime(output_dir)
 
-        for file in (
+    def clamp_mtime(self, output_dir):
+        """Clamp the modification time of the manifest, target, and output directory."""
+        for path in (
             os.path.join(output_dir, "manifest"),
             self.config.get("mmdebstrap", {}).get("target", ""),
+            output_dir,
         ):
-            if os.path.isfile(file):
-                clamp_mtime(file, self.config.source_date_epoch)
-
-        clamp_mtime(output_dir, self.config.source_date_epoch)
+            if os.path.exists(path):
+                try:
+                    clamp_mtime(path, self.config.source_date_epoch)
+                except OSError as error:
+                    self.logger.error(
+                        "Failed to change modification time of '%s': %s", path, error
+                    )
 
 
 def clamp_mtime(path, source_date_epoch):
@@ -189,7 +203,6 @@ def sanitize_list(list_):
 def parse_args(args):  # pylint: disable=too-many-statements
     """Parse the given command line arguments."""
     parser = argparse.ArgumentParser(description=__doc__)
-    # parser.add_argument("-t", "--target", help="path to a tarball filename or a directory")
     # parser.add_argument("-m", "--manifest", help="Store packages manifest in given file")
     parser.add_argument(
         "-c", "--config", action="append", default=[], help="bdebstrap configuration YAML."
@@ -215,6 +228,27 @@ def parse_args(args):  # pylint: disable=too-many-statements
     parser.add_argument("-b", "--output-base-dir", default=".", help="output base directory")
     parser.add_argument("-o", "--output", help="output directory (default: output-base-dir/name)")
     parser.add_argument(
+        "-q",
+        "--quiet",
+        "--silent",
+        dest="log_level",
+        help="Do not write anything to standard error except errors.",
+        action="store_const",
+        const=logging.ERROR,
+        default=logging.WARNING,
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        dest="log_level",
+        help=(
+            "Write informational messages to standard error. Instead of progress bars, "
+            "mmdebstrap writes the dpkg and apt output directly to standard error."
+        ),
+        action="store_const",
+        const=logging.INFO,
+    )
+    parser.add_argument(
         "--debug",
         dest="log_level",
         help=(
@@ -223,15 +257,6 @@ def parse_args(args):  # pylint: disable=too-many-statements
         ),
         action="store_const",
         const=logging.DEBUG,
-        default=logging.INFO,
-    )
-    parser.add_argument(
-        "-q",
-        "--quiet",
-        dest="log_level",
-        help="Decrease output verbosity to warnings and errors",
-        action="store_const",
-        const=logging.WARNING,
     )
     parser.add_argument(
         "-f",
@@ -728,16 +753,16 @@ def main(argv):
         config.set_source_date_epoch()
         config.check()
     except OSError:
-        sys.exit(1)
+        return 1
     except ValueError as error:
         logger.error("%s", error)
-        sys.exit(1)
+        return 1
 
     if not args.output:
         args.output = os.path.join(args.output_base_dir, config["name"])
 
     if not prepare_output_dir(args.output, args.force, args.simulate):
-        sys.exit(1)
+        return 1
     config.save(os.path.join(args.output, "config.yaml"), args.simulate)
 
     # Set environment variables
@@ -750,7 +775,7 @@ def main(argv):
 
     mmdebstrap = config.get("mmdebstrap", {})
 
-    if "target" in mmdebstrap and "/" not in mmdebstrap["target"]:
+    if mmdebstrap.get("target") not in (None, "-") and "/" not in mmdebstrap["target"]:
         mmdebstrap["target"] = os.path.join(args.output, mmdebstrap["target"])
 
     if "LD_PRELOAD" in os.environ:
@@ -764,11 +789,15 @@ def main(argv):
         logger.error(
             "mmdebstrap failed with exit code %i. See above for details.", error.returncode
         )
-        sys.exit(1)
+        return 1
 
-    logger.info("Build successful in '%s'.", mmdebstrap["target"])
+    if mmdebstrap.get("target") in (None, "-"):
+        logger.info("Build successful and sent uncompressed tarball to standard output.")
+    else:
+        logger.info("Build successful in '%s'.", mmdebstrap["target"])
     logger.info("Execution time: %s", duration_str(time.time() - start_time))
+    return 0
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    sys.exit(main(sys.argv[1:]))  # pragma: no cover
