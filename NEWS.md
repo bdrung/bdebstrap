@@ -1,3 +1,18 @@
+bdebstrap 0.2.0 (2021-06-08)
+============================
+
+This release changes the default output verbosity to align with mmdebstrap. To
+restore the previous default behavior, call bdebstrap with `--verbose`.
+
+* Fix `KeyError: 'target'` if no target was specified
+* Fix passing `--target=-` ([Debian bug #989452](https://bugs.debian.org/989452))
+* Add `--silent` as alias for `--quiet`
+* Align log levels with mmdebstrap ([Debian bug #989450](https://bugs.debian.org/989450)):
+  * Change the default log level from info to warning
+  * Add a `--verbose` option to change the log level to info again
+  * Pass down `--quiet` and `--debug` to mmdebstrap
+* Fix `PermissionError` exception when clamping mtime
+
 bdebstrap 0.1.2 (2021-05-27)
 ============================
 
