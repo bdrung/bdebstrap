@@ -1,4 +1,5 @@
 bdebstrap 0.1.2 (2021-05-27)
+============================
 
 * examples: Install init instead of systemd-sysv
 * Check import definition order with isort
@@ -12,11 +13,13 @@ bdebstrap 0.1.2 (2021-05-27)
 * Update Debian live system example to bullseye
 
 bdebstrap 0.1.1 (2020-06-18)
+============================
 
 * Strip leading/trailing spaces/tabs from mirrors specified with `--mirrors`
 * Fix complaints from flake8 3.8.3
 * Check if type of list elements are strings in YAML configuration
 
 bdebstrap 0.1 (2020-06-03)
+==========================
 
 * Initial release
