@@ -24,7 +24,7 @@ header() {
 cd "$AUTOPKGTEST_TMP"
 
 header "Example 1: Minimal Debian unstable tarball"
-bdebstrap -c /usr/share/doc/bdebstrap/examples/Debian-unstable.yaml --name example1 --mode root
+bdebstrap -v -c /usr/share/doc/bdebstrap/examples/Debian-unstable.yaml --name example1 --mode root
 check_existing example1 config.yaml manifest root.tar.xz
 rm -r example1
 
@@ -45,7 +45,7 @@ if test "$DEB_HOST_ARCH" != amd64; then
     sed -i "s/linux-image-cloud-amd64/${kernel}/" Debian-bullseye-live.yaml
     sed -i "s/amd64/${DEB_HOST_ARCH}/" Debian-bullseye-live.yaml
 fi
-bdebstrap -c Debian-bullseye-live.yaml --packages iputils-ping --name example2 --mode root
+bdebstrap -v -c Debian-bullseye-live.yaml --packages iputils-ping --name example2 --mode root
 check_existing example2 config.yaml initrd.img manifest root.squashfs vmlinuz
 xattr=$(rdsquashfs -x /bin/ping example2/root.squashfs)
 if test -z "$xattr"; then
@@ -59,7 +59,7 @@ rm -r example2
 header "Example 3: Minimal Ubuntu 20.04 LTS tarball"
 case "$DEB_HOST_ARCH" in
     amd64|arm64|armhf|i386|ppc64el|riscv64|s390x)
-        bdebstrap -c /usr/share/doc/bdebstrap/examples/Ubuntu-20.04.yaml --name example3 --mode root
+        bdebstrap -v -c /usr/share/doc/bdebstrap/examples/Ubuntu-20.04.yaml --name example3 --mode root
         check_existing example3 config.yaml manifest root.tar.xz
         rm -r example3
         ;;
