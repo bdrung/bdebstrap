@@ -186,6 +186,9 @@ def extract_image(image, chroot_dir, dry_run):
 
 def main():
     """Install golden OS image (e.g. generated with mmdebstrap) on a disk (e.g. SD card)."""
+    # TODO: split long main function into smaller parts
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "-n",
