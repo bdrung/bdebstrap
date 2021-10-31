@@ -232,6 +232,11 @@ def main():
 
     # Partitioning
     cmd = ["parted", "--script", config["disk"], "mklabel", config["partition_table"]]
+    check_call(cmd, args.dry_run)
+    check_call(["sync"], args.dry_run)
+    check_call(["udevadm", "settle"], args.dry_run)
+
+    cmd = ["parted", "--script", config["disk"]]
     start = 1048576
     partition_number = 1
     second_parted_script = []
