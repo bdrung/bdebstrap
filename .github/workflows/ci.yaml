@@ -16,6 +16,7 @@ jobs:
           - debian:unstable
           - ubuntu:groovy
           - ubuntu:hirsute
+          - ubuntu:impish
           - ubuntu:rolling
     container:
       image: ${{ matrix.container }}
