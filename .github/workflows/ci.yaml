@@ -17,7 +17,6 @@ jobs:
           - ubuntu:groovy
           - ubuntu:hirsute
           - ubuntu:rolling
-          - ubuntu:devel
     container:
       image: ${{ matrix.container }}
     steps:
