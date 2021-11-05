@@ -637,7 +637,7 @@ class Config(dict):
         """Loading configuration from given config file."""
         self.logger.info("Loading configuration from '%s'...", config_filename)
         try:
-            with open(config_filename) as config_file:
+            with open(config_filename, "rb") as config_file:
                 config = self.yaml.load(config_file)
         except OSError as error:
             self.logger.error(
@@ -683,7 +683,7 @@ class Config(dict):
         if simulate:
             self.yaml.dump(dict(self), io.StringIO())
         else:
-            with open(config_filename, "w") as config_file:
+            with open(config_filename, "w", encoding="utf-8") as config_file:
                 self.yaml.dump(dict(self), config_file)
             clamp_mtime(config_filename, self.source_date_epoch)
 
