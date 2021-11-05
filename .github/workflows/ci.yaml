@@ -14,7 +14,6 @@ jobs:
           - debian:bullseye
           - debian:testing
           - debian:unstable
-          - ubuntu:groovy
           - ubuntu:hirsute
           - ubuntu:impish
           - ubuntu:rolling
