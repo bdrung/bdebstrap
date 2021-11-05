@@ -27,11 +27,11 @@ EXAMPLE_CONFIG_DIR = os.path.join(os.path.dirname(__file__), "..", "examples")
 def default_hooks(output_dir):
     """Return the list of default hooks."""
     return [
-        '--essential-hook=mkdir -p "$1%s"' % (OUTPUT_DIR),
+        f'--essential-hook=mkdir -p "$1{OUTPUT_DIR}"',
         "--customize-hook=chroot \"$1\" dpkg-query -f='${Package}\\t${Version}\\n' -W "
-        '> "$1%s/manifest"' % (OUTPUT_DIR),
-        '--customize-hook=sync-out "%s" "%s"' % (OUTPUT_DIR, output_dir),
-        '--customize-hook=rm -rf "$1%s"' % (OUTPUT_DIR),
+        f'> "$1{OUTPUT_DIR}/manifest"',
+        f'--customize-hook=sync-out "{OUTPUT_DIR}" "{output_dir}"',
+        f'--customize-hook=rm -rf "$1{OUTPUT_DIR}"',
     ]
 
 

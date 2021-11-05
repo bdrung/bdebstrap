@@ -80,46 +80,44 @@ class Mmdebstrap:
             cmd += ["--simulate"]
         mmdebstrap = self.config.get("mmdebstrap", {})
         if "variant" in mmdebstrap:
-            cmd.append("--variant={}".format(mmdebstrap["variant"]))
+            cmd.append(f"--variant={mmdebstrap['variant']}")
         if "mode" in mmdebstrap:
-            cmd.append("--mode={}".format(mmdebstrap["mode"]))
+            cmd.append(f"--mode={mmdebstrap['mode']}")
         if "aptopts" in mmdebstrap:
-            cmd += ["--aptopt={}".format(aptopt) for aptopt in mmdebstrap["aptopts"]]
+            cmd += [f"--aptopt={aptopt}" for aptopt in mmdebstrap["aptopts"]]
         if "keyrings" in mmdebstrap:
-            cmd += ["--keyring={}".format(keyring) for keyring in mmdebstrap["keyrings"]]
+            cmd += [f"--keyring={keyring}" for keyring in mmdebstrap["keyrings"]]
         if "dpkgopts" in mmdebstrap:
-            cmd += ["--dpkgopt={}".format(dpkgopt) for dpkgopt in mmdebstrap["dpkgopts"]]
+            cmd += [f"--dpkgopt={dpkgopt}" for dpkgopt in mmdebstrap["dpkgopts"]]
         # For convenience use "packages" key as alias for "include"
         if "packages" in mmdebstrap:
-            cmd.append("--include={}".format(",".join(mmdebstrap["packages"])))
+            cmd.append(f"--include={','.join(mmdebstrap['packages'])}")
         if "components" in mmdebstrap:
-            cmd.append("--components={}".format(",".join(mmdebstrap["components"])))
+            cmd.append(f"--components={','.join(mmdebstrap['components'])}")
         if "architectures" in mmdebstrap:
-            cmd.append("--architectures={}".format(",".join(mmdebstrap["architectures"])))
+            cmd.append(f"--architectures={','.join(mmdebstrap['architectures'])}")
         if "setup-hooks" in mmdebstrap:
-            cmd += ["--setup-hook={}".format(hook) for hook in mmdebstrap["setup-hooks"]]
-        cmd.append('--essential-hook=mkdir -p "$1{}"'.format(OUTPUT_DIR))
+            cmd += [f"--setup-hook={hook}" for hook in mmdebstrap["setup-hooks"]]
+        cmd.append(f'--essential-hook=mkdir -p "$1{OUTPUT_DIR}"')
         if "essential-hooks" in mmdebstrap:
-            cmd += ["--essential-hook={}".format(hook) for hook in mmdebstrap["essential-hooks"]]
+            cmd += [f"--essential-hook={hook}" for hook in mmdebstrap["essential-hooks"]]
         if "customize-hooks" in mmdebstrap:
-            cmd += ["--customize-hook={}".format(hook) for hook in mmdebstrap["customize-hooks"]]
+            cmd += [f"--customize-hook={hook}" for hook in mmdebstrap["customize-hooks"]]
         # cleanup hooks are just hooks that run after all other customize hooks
         if "cleanup-hooks" in mmdebstrap:
-            cmd += ["--customize-hook={}".format(hook) for hook in mmdebstrap["cleanup-hooks"]]
+            cmd += [f"--customize-hook={hook}" for hook in mmdebstrap["cleanup-hooks"]]
 
         # Special parameters not present in mmdebstrap
         if "hostname" in mmdebstrap:
-            cmd.append(
-                '--customize-hook=echo "{}" > "$1/etc/hostname"'.format(mmdebstrap["hostname"])
-            )
+            cmd.append(f'--customize-hook=echo "{mmdebstrap["hostname"]}" > "$1/etc/hostname"')
         if "install-recommends" in mmdebstrap and mmdebstrap["install-recommends"] is True:
             cmd.append('--aptopt=Apt::Install-Recommends "true"')
         cmd.append(
-            '--customize-hook=chroot "$1" dpkg-query '
-            "-f='${Package}\\t${Version}\\n' -W > \"$1%s/manifest\"" % (OUTPUT_DIR)
+            "--customize-hook=chroot \"$1\" dpkg-query -f='${Package}\\t${Version}\\n' -W "
+            f'> "$1{OUTPUT_DIR}/manifest"'
         )
-        cmd.append('--customize-hook=sync-out "{}" "{}"'.format(OUTPUT_DIR, output_dir))
-        cmd.append('--customize-hook=rm -rf "$1{}"'.format(OUTPUT_DIR))
+        cmd.append(f'--customize-hook=sync-out "{OUTPUT_DIR}" "{output_dir}"')
+        cmd.append(f'--customize-hook=rm -rf "$1{OUTPUT_DIR}"')
 
         # Positional arguments
         cmd.append(mmdebstrap.get("suite", "-"))
@@ -163,17 +161,12 @@ def clamp_mtime(path, source_date_epoch):
 def duration_str(duration):
     """Return duration in the biggest useful time unit (hours, minutes, seconds)."""
     if duration < 60:
-        return "%.3f seconds" % (duration)
+        return f"{duration:.3f} seconds"
+    minutes = int(duration // 60)
     if duration < 3600:
-        return "%i min %.3f s (= %.3f s)" % (duration // 60, duration % 60, duration)
+        return f"{minutes} min {duration % 60:.3f} s (= {duration:.3f} s)"
 
-    minutes = duration % 3600
-    return "%i h %i min %.3f s (= %.3f s)" % (
-        duration // 3600,
-        minutes // 60,
-        minutes % 60,
-        duration,
-    )
+    return f"{minutes // 60} h {minutes % 60} min {duration % 60:.3f} s (= {duration:.3f} s)"
 
 
 def escape_cmd(cmd):
@@ -440,9 +433,7 @@ def parse_args(args):  # pylint: disable=too-many-statements
     env_dict = {}
     for env in args.env:
         if "=" not in env:
-            parser.error(
-                "Failed to parse --env '%s'. It needs to be in the format KEY=value." % env
-            )
+            parser.error(f"Failed to parse --env '{env}'. It needs to be in the format KEY=value.")
         key, value = env.split("=", 1)
         env_dict[key] = value
     args.env = env_dict
@@ -616,16 +607,16 @@ class Config(dict):
                     continue
                 if not isinstance(value, MMDEBSTRAP_OPTS[key]):
                     raise ValueError(
-                        "Unexpected type '%s' for mmdebstrap option '%s'. "
-                        "Excepted: %s." % (type(value), key, MMDEBSTRAP_OPTS[key])
+                        f"Unexpected type '{type(value)}' for mmdebstrap option '{key}'. "
+                        f"Excepted: {MMDEBSTRAP_OPTS[key]}."
                     )
                 if MMDEBSTRAP_OPTS[key] is list:
                     # Check if list elements are strings
                     for element in value:
                         if not isinstance(element, str):
                             raise ValueError(
-                                "Following list element of mmdebstrap option '%s' has type '%s' "
-                                "instead of string: %s" % (key, type(element).__name__, element)
+                                f"Following list element of mmdebstrap option '{key}' has type "
+                                f"'{type(element).__name__}' instead of string: {element}"
                             )
         else:
             self.logger.warning("The configuration does not contain a 'mmdebstrap' entry.")

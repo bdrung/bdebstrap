@@ -33,13 +33,13 @@ class BlackTestCase(unittest.TestCase):
 
         cmd = ["black", "--check", "--diff", "-l", "99"] + get_source_files()
         if unittest_verbosity() >= 2:
-            sys.stderr.write("Running following command:\n{}\n".format(" ".join(cmd)))
+            sys.stderr.write(f"Running following command:\n{' '.join(cmd)}\n")
         with subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True
         ) as process:
             output = process.communicate()[0].decode()
 
         if process.returncode == 1:  # pragma: no cover
-            self.fail("black found code that needs reformatting:\n{}".format(output.strip()))
+            self.fail(f"black found code that needs reformatting:\n{output.strip()}")
         if process.returncode != 0:  # pragma: no cover
-            self.fail("black exited with code {}:\n{}".format(process.returncode, output.strip()))
+            self.fail(f"black exited with code {process.returncode}:\n{output.strip()}")
