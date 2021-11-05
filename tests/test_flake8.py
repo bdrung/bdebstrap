@@ -34,11 +34,11 @@ class Flake8TestCase(unittest.TestCase):
         cmd = [sys.executable, "-m", "flake8", "--max-line-length=99"] + get_source_files()
         if unittest_verbosity() >= 2:
             sys.stderr.write("Running following command:\n{}\n".format(" ".join(cmd)))
-        process = subprocess.Popen(
+        with subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True
-        )
+        ) as process:
+            out, err = process.communicate()
 
-        out, err = process.communicate()
         if process.returncode != 0:  # pragma: no cover
             msgs = []
             if err:

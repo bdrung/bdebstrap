@@ -40,10 +40,10 @@ class PylintTestCase(unittest.TestCase):
         cmd = [sys.executable, "-m", "pylint", "--rcfile=" + CONFIG, "--"] + get_source_files()
         if unittest_verbosity() >= 2:
             sys.stderr.write("Running following command:\n{}\n".format(" ".join(cmd)))
-        process = subprocess.Popen(
+        with subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True
-        )
-        out, err = process.communicate()
+        ) as process:
+            out, err = process.communicate()
 
         if process.returncode != 0:  # pragma: no cover
             # Strip trailing summary (introduced in pylint 1.7). This summary might look like:
