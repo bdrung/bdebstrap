@@ -1,0 +1,13 @@
+---
+# Combine this configuration with Debian-bullseye.yaml for a working golden image.
+mmdebstrap:
+  architectures:
+    - arm64
+  components:
+    - contrib
+    - non-free
+  packages:
+    # Raspberry Pi Zero 2 W specific
+    - firmware-brcm80211  # contains /lib/firmware/brcm/brcmfmac43430-sdio.bin (required for WiFi)
+    - linux-image-arm64
+    - raspi-firmware
