@@ -1,3 +1,10 @@
+bdebstrap (0.3.0-1) unstable; urgency=medium
+
+  * New upstream release:
+    - Fix issues found by pylint 2.11.1 (Closes: #998591)
+
+ -- Benjamin Drung <bdrung@debian.org>  Mon, 08 Nov 2021 14:17:45 +0100
+
 bdebstrap (0.2.0-1) unstable; urgency=medium
 
   * New upstream release:
