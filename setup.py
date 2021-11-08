@@ -99,7 +99,7 @@ if __name__ == "__main__":
         ],
         cmdclass={"doc": DocCommand, "build": BuildCommand, "clean": CleanCommand},
         install_requires=["ruamel.yaml"],
-        scripts=["bdebstrap"],
+        scripts=["bdebstrap", "install-image"],
         py_modules=[],
         data_files=[("/usr/share/man/man1", MAN_PAGES), ("/usr/share/bdebstrap/hooks", HOOKS)],
     )

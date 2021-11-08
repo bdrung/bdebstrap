@@ -1,0 +1,292 @@
+#!/usr/bin/python3
+
+# Copyright (C) 2019-2021 Benjamin Drung <bdrung@posteo.de>
+#
+# Permission to use, copy, modify, and/or distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+# pylint: disable=invalid-name
+# pylint: enable=invalid-name
+
+"""
+Install golden OS image (e.g. generated with mmdebstrap) on a disk (e.g. SD card).
+"""
+
+import argparse
+import logging
+import operator
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+
+import ruamel.yaml
+
+ALLOWED_FLAGS = (
+    "boot",
+    "esp",
+    "hidden",
+    "irst",
+    "lba",
+    "legacy_boot",
+    "lvm",
+    "palo",
+    "raid",
+    "root",
+    "swap",
+)
+FILESYSTEMS = (
+    "bfs",
+    "cramfs",
+    "exfat",
+    "ext2",
+    "ext3",
+    "ext4",
+    "f2fs",
+    "fat",
+    "fat16",
+    "fat32",
+    "jffs2",
+    "minix",
+    "ntfs",
+    "ubifs",
+)
+PARTITION_TYPES = ("aix", "amiga", "bsd", "dvh", "gpt", "loop", "mac", "msdos", "pc98", "sun")
+LOG_FORMAT = "%(asctime)s %(name)s %(levelname)s: %(message)s"
+__script_name__ = os.path.basename(sys.argv[0]) if __name__ == "__main__" else __name__
+
+
+def escape_cmd(cmd):
+    """Escape command line line arguments for printing/logging."""
+    cmd = [re.sub('(["$])', r"\\\1", re.sub("\t", "\\\\t", re.sub("\n", "\\\\n", x))) for x in cmd]
+    return " ".join(f'"{x}"' if " " in x else x for x in cmd)
+
+
+def read_file(filename):
+    """Return stripped content of given file. Return None if the file does not exist."""
+    try:
+        with open(filename, encoding="utf-8") as file_:
+            content = file_.read().strip()
+    except FileNotFoundError:
+        content = None
+    return content
+
+
+def check_disk(disk):
+    """Ensure that the disk is a SD card or connected via USB.
+
+    To prevent mistakenly trashing the wrong disk (e.g. the system or data disk),
+    check that the disk is a SD card or that it is connected via USB.
+
+    Heuristics are used, because the system does not report useful values.
+    """
+    if re.match("^(/dev/)?mmcblk[0-9]+$", disk):
+        return True
+
+    block_path = os.path.join("/sys/block/", os.path.basename(disk))
+    device_vendor = read_file(os.path.join(block_path, "device", "vendor"))
+    device_model = read_file(os.path.join(block_path, "device", "model"))
+
+    # Kingston MobileLite G4 Detected on my workstation
+    if (device_vendor, device_model) == ("Generic-", "USB3.0 CRW   -SD"):
+        return True
+    # Kingston MobileLite Duo 3C detected on my workstation
+    if (device_vendor, device_model) == ("Generic-", "SD/MMC"):
+        return True
+    # RaidSonic Icy Box IB-230StU3-G
+    if (device_vendor, device_model) == ("Innostor", "IS888 USB bridge"):
+        return True
+
+    return False
+
+
+def parse_bytes(data):
+    """Parse bytes from given string.
+
+    The SI prefixes (kB, MB, etc.) and binary prefixes (KiB, MiB, etc.) are supported.
+    For backward compatibility, the units K, M, and G are mapped to KiB, MiB, and GiB.
+    """
+    match = re.match(r"^([0-9]+)\s*([kMGTPE]?B|[KMGTPE]iB|[KMGTPE])$", data.strip())
+    if not match:
+        raise ValueError(
+            f"Failed to parse bytes from '{data}'. Please use SI or binary prefixes for bytes "
+            "(e.g. '2 GB' or '512 MiB')."
+        )
+
+    value = int(match.group(1))
+    unit = match.group(2)
+    if unit.endswith("iB"):
+        value *= 1 << (10 * {"KiB": 1, "MiB": 2, "GiB": 3, "TiB": 4, "PiB": 5, "EiB": 6}[unit])
+    elif unit.endswith("B"):
+        value *= 10 ** (3 * {"": 0, "kB": 1, "MB": 2, "GB": 3, "TB": 4, "PB": 5, "EB": 6}[unit])
+    else:
+        value *= 1 << (10 * {"K": 1, "M": 2, "G": 3, "T": 4, "P": 5, "E": 6}[unit])
+    return value
+
+
+def format_bytes(size, delim=" "):
+    """Format size with biggest possible unit."""
+    prefix_level = 0
+    while size >= 1024 and size % 1024 == 0 and prefix_level < 6:
+        prefix_level += 1
+        size //= 1024
+    return str(size) + delim + ["B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"][prefix_level]
+
+
+def check_call(cmd, dry_run):
+    """Call a command using subprocess.call()."""
+    logging.getLogger(__script_name__).info("Calling %s", escape_cmd(cmd))
+    if not dry_run:
+        subprocess.check_call(cmd)
+
+
+def partition_name(disk, partition_number):
+    """Calculate the partition name from the disk name and the partition number."""
+    if re.match("^.*[0-9]$", disk):
+        name = disk + "p" + str(partition_number)
+    else:
+        name = disk + str(partition_number)
+    return name
+
+
+def is_xz_compressed(filename):
+    return filename.endswith(".xz")
+
+
+def extract_image(image, chroot_dir, dry_run):
+    cmd = [
+        "tar",
+        "--numeric-owner",
+        "--acls",
+        "--selinux",
+        "--xattrs",
+        "--xattrs-include=*",
+        "-xf",
+        image,
+        "-C",
+        chroot_dir,
+    ]
+    if is_xz_compressed(image) and shutil.which("pixz"):
+        # Use pixz for parallel xz decompression
+        cmd.append("-Ipixz")
+    check_call(cmd, dry_run)
+    check_call(["sync"], dry_run)
+
+
+def main():
+    """Install golden OS image (e.g. generated with mmdebstrap) on a disk (e.g. SD card)."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "-n",
+        "--dry-run",
+        action="store_true",
+        help="Just print the commands, but do not execute them.",
+    )
+    parser.add_argument("config", help="partition configuration YAML.")
+    args = parser.parse_args()
+    logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
+    logger = logging.getLogger(__script_name__)
+
+    yaml = ruamel.yaml.YAML()
+    with open(args.config, "rb") as config_file:
+        config = yaml.load(config_file)["install"]
+
+    if os.geteuid() != 0 and not args.dry_run:
+        sys.exit(
+            "You need to have root privileges to run this script.\n"
+            "Please try again, this time using 'sudo'. Exiting."
+        )
+
+    if not os.path.exists(config["image"]):
+        sys.exit(f"Image '{config['image']}' does not exist.")
+
+    real_disk = os.path.realpath(config["disk"])
+    if real_disk != config["disk"]:
+        logger.info("Resolving disk '%s' to '%s'.", config["disk"], real_disk)
+        config["disk"] = real_disk
+
+    if not check_disk(config["disk"]):
+        sys.exit(f"The disk '{config['disk']}' is not a SD card or connected via USB. Exiting.")
+
+    # TODO: Check mounted partitions
+
+    if config["partition_table"] not in PARTITION_TYPES:
+        sys.exit(
+            f"Unsupported partition table type '{config['partition_table']}'. "
+            f"It must be one of {', '.join(PARTITION_TYPES)}."
+        )
+
+    # Partitioning
+    cmd = ["parted", "--script", config["disk"], "mklabel", config["partition_table"]]
+    start = 1048576
+    partition_number = 1
+    second_parted_script = []
+    for partition in config["partitions"]:
+        if re.match(r"^\s*[0-9]+\s*%\s*$", partition["size"]):
+            end = partition["size"].strip()
+            # TODO: Calculate size
+            size = None
+        else:
+            size = parse_bytes(partition["size"])
+            end = format_bytes(start + size - 1, delim="")
+        cmd += ["mkpart", "primary", partition["format"], format_bytes(start, delim=""), end]
+        partition["device"] = partition_name(config["disk"], str(partition_number))
+        if size:
+            start += size
+        for flag in partition.get("flags", []):
+            assert flag in ALLOWED_FLAGS
+            # Note: Setting the LBA flag when creating the partition fails silently
+            # (on Ubuntu 19.04). Therefore set the flags in a second call.
+            second_parted_script += ["set", str(partition_number), flag, "on"]
+        partition_number += 1
+    check_call(cmd, args.dry_run)
+    if second_parted_script:
+        check_call(["parted", "--script", config["disk"]] + second_parted_script, args.dry_run)
+    check_call(["sync"], args.dry_run)
+    check_call(["udevadm", "settle"], args.dry_run)
+
+    # Formatting
+    for partition in config["partitions"]:
+        assert partition["format"] in FILESYSTEMS
+        cmd = ["mkfs." + partition["format"]]
+        match = re.match("^fat(16|32)$", partition["format"])
+        if match:
+            cmd = ["mkfs.vfat", "-F", match.group(1)]
+        if partition["format"] == "ext4":
+            cmd += ["-E", "discard", "-F"]
+        cmd.append(partition["device"])
+        check_call(cmd, args.dry_run)
+    check_call(["sync"], args.dry_run)
+    check_call(["udevadm", "settle"], args.dry_run)
+
+    # Mounting
+    unmount = []
+    with tempfile.TemporaryDirectory(prefix=os.path.basename(sys.argv[0]) + "-") as chroot_dir:
+        try:
+            for partition in sorted(config["partitions"], key=operator.itemgetter("mount")):
+                mountpoint = chroot_dir + partition["mount"]
+                cmd = ["mount", "-o", "suid,dev,exec,suid", partition["device"], mountpoint]
+                if not os.path.isdir(mountpoint) and not args.dry_run:
+                    os.makedirs(mountpoint, mode=0o755)
+                check_call(cmd, args.dry_run)
+                unmount.insert(0, mountpoint)
+
+            extract_image(config["image"], chroot_dir, args.dry_run)
+        finally:
+            for mountpoint in unmount:
+                check_call(["umount", mountpoint], args.dry_run)
+
+
+if __name__ == "__main__":
+    main()
