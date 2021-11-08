@@ -518,6 +518,8 @@ class Config(dict):
         super().__init__(self, *args, **kwargs)
         self.logger = logging.getLogger(__script_name__)
         self.yaml = ruamel.yaml.YAML()
+        self.yaml.explicit_start = True
+        self.yaml.indent(offset=2, sequence=4)
 
     def _set_mmdebstrap_option(self, option, value):
         """Set the given mmdebstrap option (overwriting existing values)."""
