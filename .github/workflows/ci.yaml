@@ -37,3 +37,17 @@ jobs:
         with:
           fail_ci_if_error: true
           functionalities: gcov
+
+  yamllint:
+    runs-on: ubuntu-latest
+    container:
+      image: debian:testing
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install --yes --no-install-recommends yamllint
+      - name: Run yamllint
+        run: |
+          yamllint .
