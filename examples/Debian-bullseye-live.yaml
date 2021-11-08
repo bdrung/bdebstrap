@@ -10,9 +10,9 @@ mmdebstrap:
     - cp --preserve=timestamps -v "$1"/boot/initrd.img* "$1${BDEBSTRAP_OUTPUT_DIR?}/initrd.img"
     - mkdir -p "$1/root/.ssh"
     - upload ~/.ssh/id_rsa.pub /root/.ssh/authorized_keys
-    # Create a proper root password entry with "openssl passwd -6 $password"
+    # Set 'debian' as root password. Create a secure root password with "openssl passwd -6 $password"!
     - chroot "$1" usermod -p
-      '$6$gxPiEmowud.yY/mT$SE1TTiHkw9mW3YtECxyluZtNPHN7IYPa.vRlWZZVtC8L6qG2PzGpwGIlgMDY79vucWD577fZm/EcA4LS3Koob0' root
+      '$6$ojM9XUz3tre8c/Ah$gBBIjy5zyhFMtJnQmK3YYXL8APHk9gTz.hlQP6AZnLV79bkQddUqOnTpcltEW.7l/OAq4u5.SMgDq1LL8u6BM/' root
   keyrings:
     - /usr/share/keyrings/debian-archive-keyring.gpg
   mode: unshare
