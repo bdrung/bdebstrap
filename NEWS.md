@@ -1,3 +1,16 @@
+bdebstrap 0.3.0 (2021-11-08)
+============================
+
+* Fix issues found by pylint 2.11.1
+  (fixes [Debian bug #998591](https://bugs.debian.org/998591)):
+  * tests: Use `with for subprocess.Popen` calls
+  * Save YAML configuration files explicitly as UTF-8
+  * Replace `.format()` with f-strings
+* Make YAML files free of complaints from yamllint
+* Produce YAML files that are yamllint clean
+* Add example configurations for Raspberry Pis (version 3 and Zero W)
+* Set root password for Debian live example to `debian`
+
 bdebstrap 0.2.0 (2021-06-08)
 ============================
 

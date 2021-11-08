@@ -1,11 +1,12 @@
+---
 name: commented-packages
 mmdebstrap:
   architectures:
-  - amd64
+    - amd64
   mode: unshare
   suite: unstable
   target: root.tar.xz
   variant: minbase
   packages:
-  - # empty
-  - netconsole
+    -  # empty
+    - netconsole

@@ -1,0 +1,66 @@
+---
+mmdebstrap:
+  cleanup-hooks:
+    - cp /dev/null "$1/etc/hostname"
+    - if test -f "$1/etc/resolv.conf"; then cp /dev/null "$1/etc/resolv.conf"; fi
+  components:
+    - main
+  customize-hooks:
+    # Update APT cache to update command-not-found database
+    - chroot "$1" apt-get update
+  keyrings:
+    - /usr/share/keyrings/debian-archive-keyring.gpg
+  mode: unshare
+  packages:
+    # install packages from priority important (aptitude search '~pimportant' -F'%p')
+    - adduser
+    - debian-archive-keyring
+    - fdisk
+    - gpgv
+    - ifupdown
+    - init
+    - iproute2
+    - iputils-ping
+    - isc-dhcp-client
+    - kmod
+    - less
+    - logrotate
+    - nano
+    - netbase
+    - procps
+    - rsyslog
+    - sensible-utils
+    - udev
+    - whiptail
+    # install packages from priority standard (aptitude search '~pstandard' -F'%p')
+    - bash-completion
+    - bind9-dnsutils
+    - bind9-host
+    - dbus
+    - file
+    - libpam-systemd  # recommended by systemd and needed to not run into https://bugs.debian.org/751636
+    - locales
+    - lsof
+    - man-db
+    - manpages
+    - openssh-client
+    - pciutils
+    - traceroute
+    - wget
+    - xz-utils
+    # basic stuff
+    - command-not-found
+    - console-data
+    - htop
+    - kbd  # for loadkeys
+    - openssh-server
+    - psmisc  # for fuser, killall, etc.
+    - rsync
+    - sudo
+    - usbutils  # for lsusb
+    - vim
+    - wireless-tools
+    - wpasupplicant
+  suite: bullseye
+  target: root.tar.xz
+  variant: minbase

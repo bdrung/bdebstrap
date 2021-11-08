@@ -16,6 +16,7 @@
 
 import logging
 import os
+import tempfile
 import unittest
 
 from bdebstrap import Config, dict_merge, parse_args
@@ -363,6 +364,19 @@ class TestConfig(unittest.TestCase):
                 }
             },
         )
+
+    def test_yaml_rendering(self):
+        """Test that config.yaml is formatted correctly."""
+        config = Config()
+        config_filename = os.path.join(EXAMPLE_CONFIG_DIR, "Debian-unstable.yaml")
+        config.load(config_filename)
+        with tempfile.NamedTemporaryFile() as temp_file:
+            config.save(temp_file.name)
+            with open(temp_file.name, encoding="utf-8") as config_file:
+                output_config = config_file.read()
+        with open(config_filename, encoding="utf-8") as config_file:
+            input_config = config_file.read()
+        self.assertEqual(output_config, input_config)
 
     def test_source_date_epoch(self):
         """Test getting and setting SOURCE_DATE_EPOCH."""

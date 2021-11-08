@@ -313,9 +313,10 @@ Debian unstable tarball. Assume following configuration is stored in
 *unstable.yaml*:
 
 ```yaml
+---
 mmdebstrap:
   keyrings:
-  - /usr/share/keyrings/debian-archive-keyring.gpg
+    - /usr/share/keyrings/debian-archive-keyring.gpg
   mode: unshare
   suite: unstable
   target: root.tar.xz
@@ -336,29 +337,30 @@ This example shows how to use a YAML configuration to build a Debian 11
 (bullseye) live system. Assume following configuration is stored in *live.yaml*:
 
 ```yaml
+---
 mmdebstrap:
   architectures:
-  - amd64
+    - amd64
   cleanup-hooks:
-  - cp /dev/null "$1/etc/hostname"
-  - if test -f "$1/etc/resolv.conf"; then cp /dev/null "$1/etc/resolv.conf"; fi
+    - cp /dev/null "$1/etc/hostname"
+    - if test -f "$1/etc/resolv.conf"; then cp /dev/null "$1/etc/resolv.conf"; fi
   customize-hooks:
-  - cp --preserve=timestamps -v "$1"/boot/vmlinu* "$1${BDEBSTRAP_OUTPUT_DIR?}/vmlinuz"
-  - cp --preserve=timestamps -v "$1"/boot/initrd.img* "$1${BDEBSTRAP_OUTPUT_DIR?}/initrd.img"
-  - mkdir -p "$1/root/.ssh"
-  - upload ~/.ssh/id_rsa.pub /root/.ssh/authorized_keys
+    - cp --preserve=timestamps -v "$1"/boot/vmlinu* "$1${BDEBSTRAP_OUTPUT_DIR?}/vmlinuz"
+    - cp --preserve=timestamps -v "$1"/boot/initrd.img* "$1${BDEBSTRAP_OUTPUT_DIR?}/initrd.img"
+    - mkdir -p "$1/root/.ssh"
+    - upload ~/.ssh/id_rsa.pub /root/.ssh/authorized_keys
   keyrings:
-  - /usr/share/keyrings/debian-archive-keyring.gpg
+    - /usr/share/keyrings/debian-archive-keyring.gpg
   mode: unshare
   packages:
-  - init
-  - iproute2
-  - less
-  - libpam-systemd
-  - linux-image-cloud-amd64
-  - live-boot
-  - locales
-  - openssh-server
+    - init
+    - iproute2
+    - less
+    - libpam-systemd
+    - linux-image-cloud-amd64
+    - live-boot
+    - locales
+    - openssh-server
   suite: bullseye
   target: root.squashfs
   variant: minbase

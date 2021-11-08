@@ -1,7 +1,8 @@
+---
 name: wrong-element-type
 mmdebstrap:
   customize-hooks:
-  # Make vim the default editor
-  - chroot "$1" update-alternatives --set editor /usr/bin/vim.basic
-  # Passwordless sudo
-  - sed -i 's/^%sudo.*$/%sudo   ALL=(ALL:ALL) NOPASSWD: ALL/' "$1/etc/sudoers"
+    # Make vim the default editor
+    - chroot "$1" update-alternatives --set editor /usr/bin/vim.basic
+    # Passwordless sudo
+    - sed -i 's/^%sudo.*$/%sudo   ALL=(ALL:ALL) NOPASSWD: ALL/' "$1/etc/sudoers"

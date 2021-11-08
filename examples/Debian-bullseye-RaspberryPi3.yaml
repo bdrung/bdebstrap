@@ -1,0 +1,17 @@
+---
+# Combine this configuration with Debian-bullseye.yaml for a working golden image.
+mmdebstrap:
+  architectures:
+    - arm64
+  components:
+    - contrib
+    - non-free
+  customize-hooks:
+    # Network: Use DHCP on the Ethernet interface
+    - printf "\nauto lo\niface lo inet loopback\n\nallow-hotplug eth0\niface eth0 inet dhcp\n"
+      >> "$1/etc/network/interfaces"
+  packages:
+    # Raspberry Pi 3 specific
+    - firmware-brcm80211  # contains /lib/firmware/brcm/brcmfmac43430-sdio.bin (required for WiFi)
+    - linux-image-arm64
+    - raspi-firmware

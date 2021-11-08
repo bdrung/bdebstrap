@@ -43,7 +43,7 @@ class DocCommand(distutils.cmd.Command):
         """Run pandoc."""
         for man_page in MAN_PAGES:
             command = ["pandoc", "-s", "-t", "man", man_page + ".md", "-o", man_page]
-            self.announce("running command: %s" % " ".join(command), level=distutils.log.INFO)
+            self.announce(f"running command: {' '.join(command)}", level=distutils.log.INFO)
             subprocess.check_call(command)
 
 
@@ -61,7 +61,7 @@ class CleanCommand(distutils.command.clean.clean):
     def run(self):
         for man_page in MAN_PAGES:
             if os.path.exists(man_page):
-                self.announce("removing %s" % (man_page), level=distutils.log.INFO)
+                self.announce(f"removing {man_page}", level=distutils.log.INFO)
                 os.remove(man_page)
         distutils.command.clean.clean.run(self)
 
@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
     setup(
         name="bdebstrap",
-        version="0.2.0",
+        version="0.3.0",
         description="Benjamin's multi-mirror Debian chroot creation tool",
         long_description=LONG_DESCRIPTION,
         long_description_content_type="text/markdown",
@@ -88,8 +88,6 @@ if __name__ == "__main__":
             "Operating System :: POSIX",
             "Programming Language :: Python :: 3",
             "Programming Language :: Python :: 3 :: Only",
-            "Programming Language :: Python :: 3.4",
-            "Programming Language :: Python :: 3.5",
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",

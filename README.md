@@ -27,9 +27,10 @@ Debian unstable tarball. Assume following configuration is stored in
 *examples/Debian-unstable.yaml*:
 
 ```yaml
+---
 mmdebstrap:
   keyrings:
-  - /usr/share/keyrings/debian-archive-keyring.gpg
+    - /usr/share/keyrings/debian-archive-keyring.gpg
   mode: unshare
   suite: unstable
   target: root.tar.xz
@@ -52,31 +53,33 @@ This example shows how to use a YAML configuration to build a Debian 11
 *examples/Debian-bullseye-live.yaml*:
 
 ```yaml
+---
 mmdebstrap:
   architectures:
-  - amd64
+    - amd64
   cleanup-hooks:
-  - cp /dev/null "$1/etc/hostname"
-  - if test -f "$1/etc/resolv.conf"; then cp /dev/null "$1/etc/resolv.conf"; fi
+    - cp /dev/null "$1/etc/hostname"
+    - if test -f "$1/etc/resolv.conf"; then cp /dev/null "$1/etc/resolv.conf"; fi
   customize-hooks:
-  - cp --preserve=timestamps -v "$1"/boot/vmlinu* "$1${BDEBSTRAP_OUTPUT_DIR?}/vmlinuz"
-  - cp --preserve=timestamps -v "$1"/boot/initrd.img* "$1${BDEBSTRAP_OUTPUT_DIR?}/initrd.img"
-  - mkdir -p "$1/root/.ssh"
-  - upload ~/.ssh/id_rsa.pub /root/.ssh/authorized_keys
-  # Create a proper root password entry with "openssl passwd -6 $password"
-  - chroot "$1" usermod -p '$6$gxPiEmowud.yY/mT$SE1TTiHkw9mW3YtECxyluZtNPHN7IYPa.vRlWZZVtC8L6qG2PzGpwGIlgMDY79vucWD577fZm/EcA4LS3Koob0' root
+    - cp --preserve=timestamps -v "$1"/boot/vmlinu* "$1${BDEBSTRAP_OUTPUT_DIR?}/vmlinuz"
+    - cp --preserve=timestamps -v "$1"/boot/initrd.img* "$1${BDEBSTRAP_OUTPUT_DIR?}/initrd.img"
+    - mkdir -p "$1/root/.ssh"
+    - upload ~/.ssh/id_rsa.pub /root/.ssh/authorized_keys
+    # Set 'debian' as root password. Create a secure root password with "openssl passwd -6 $password"!
+    - chroot "$1" usermod -p
+      '$6$ojM9XUz3tre8c/Ah$gBBIjy5zyhFMtJnQmK3YYXL8APHk9gTz.hlQP6AZnLV79bkQddUqOnTpcltEW.7l/OAq4u5.SMgDq1LL8u6BM/' root
   keyrings:
-  - /usr/share/keyrings/debian-archive-keyring.gpg
+    - /usr/share/keyrings/debian-archive-keyring.gpg
   mode: unshare
   packages:
-  - init
-  - iproute2
-  - less
-  - libpam-systemd # recommended by systemd and needed to not run into https://bugs.debian.org/751636
-  - linux-image-cloud-amd64
-  - live-boot
-  - locales
-  - openssh-server
+    - init
+    - iproute2
+    - less
+    - libpam-systemd  # recommended by systemd and needed to not run into https://bugs.debian.org/751636
+    - linux-image-cloud-amd64
+    - live-boot
+    - locales
+    - openssh-server
   suite: bullseye
   target: root.squashfs
   variant: minbase
