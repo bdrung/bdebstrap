@@ -20,6 +20,7 @@ import logging
 import os
 import tempfile
 import unittest
+import unittest.mock
 
 from bdebstrap import Config, dict_merge, parse_args
 
