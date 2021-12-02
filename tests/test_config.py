@@ -14,6 +14,8 @@
 
 """Test configuration handling of bdebstrap."""
 
+import contextlib
+import io
 import logging
 import os
 import tempfile
@@ -113,8 +115,10 @@ class TestArguments(unittest.TestCase):
 
     def test_malformed_env(self):
         """Test malformed --env parameter (missing equal sign)."""
-        with self.assertRaises(SystemExit):
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit):
             parse_args(["--env", "invalid"])
+        self.assertIn("Failed to parse --env 'invalid'.", stderr.getvalue())
 
     def test_mirrors_with_spaces(self):
         """Test --mirrors with leading/trailing spaces."""
