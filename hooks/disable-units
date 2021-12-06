@@ -1,0 +1,31 @@
+#!/bin/sh
+set -eu
+
+# Copyright (C) 2021, Benjamin Drung <bdrung@posteo.de>
+# SPDX-License-Identifier: ISC
+
+# Disable services / systemd units in a chroot environment.
+
+if test "$#" = 0; then
+    echo "${0##*/}: Called without required CHROOT_DIR argument." >&2
+    echo "usage: ${0##*/} CHROOT_DIR service/systemd_unit [service/system_unit...]" >&2
+    exit 1
+fi
+
+chroot_directory="$1"
+shift
+
+for unit in "$@"; do
+    unit_files=$(test ! -d "${chroot_directory}/etc/systemd/system" ||
+                 find "${chroot_directory}"/etc/systemd/system/*.wants -name "$unit" -o -name "${unit}.service")
+    if test -n "$unit_files"; then
+        echo "${0##*/}: Disabling unit $unit..." >&2
+        rm "$unit_files"
+    elif test -e "${chroot_directory}/etc/init.d/$unit"; then
+        echo "${0##*/}: Disabling SysV init.d service $unit..." >&2
+        echo "${0##*/}: Calling chroot \"${chroot_directory}\" /usr/sbin/update-rc.d \"$unit\" disable" >&2
+        chroot "${chroot_directory}" /usr/sbin/update-rc.d "$unit" disable
+    else
+        echo "${0##*/}: Unit $unit not found. Skipping disabling it." >&2
+    fi
+done

@@ -123,6 +123,34 @@ the virtual machine is started, it can be accessed via SSH:
 $ ssh -oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -p 2222 root@localhost
 ```
 
+Hooks
+=====
+
+bdebstrap ships a bunch of hook scripts that can be used to configure the
+produced chroot. The environment variable `BDEBSTRAP_HOOKS` can be used to
+refer to the path to the hook script. Available hooks:
+
+* disable-units
+* enable-units
+
+Disable/enable services
+-----------------------
+
+The `disable-units` and `enable-units` hook script can be used to
+disable/enable services. Either service names or full systemd unit names should
+be specified. Example:
+
+```yaml
+---
+mmdebstrap:
+  customize-hooks:
+    - $BDEBSTRAP_HOOKS/disable-units "$1" apt-daily.timer cron
+    - $BDEBSTRAP_HOOKS/enable-units "$1" systemd-timesyncd
+  suite: bullseye
+  target: root.tar
+  variant: important
+```
+
 Prerequisites
 =============
 
@@ -144,6 +172,7 @@ The test cases have additional Python module requirements:
 * flake8
 * isort
 * pylint
+* shellcheck
 
 Thanks
 ======

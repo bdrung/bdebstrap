@@ -24,6 +24,7 @@ import subprocess
 
 from setuptools import setup
 
+HOOKS = ["hooks/disable-units", "hooks/enable-units"]
 MAN_PAGES = ["bdebstrap.1"]
 
 
@@ -97,5 +98,5 @@ if __name__ == "__main__":
         install_requires=["ruamel.yaml"],
         scripts=["bdebstrap"],
         py_modules=[],
-        data_files=[("/usr/share/man/man1", MAN_PAGES)],
+        data_files=[("/usr/share/man/man1", MAN_PAGES), ("/usr/share/bdebstrap/hooks", HOOKS)],
     )

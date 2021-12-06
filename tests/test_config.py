@@ -22,7 +22,7 @@ import tempfile
 import unittest
 import unittest.mock
 
-from bdebstrap import Config, dict_merge, parse_args
+from bdebstrap import HOOKS_DIR, Config, dict_merge, parse_args
 
 EXAMPLE_CONFIG_DIR = os.path.join(os.path.dirname(__file__), "..", "examples")
 TEST_CONFIG_DIR = os.path.join(os.path.dirname(__file__), "configs")
@@ -365,6 +365,7 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(
             config.env_items(),
             [
+                ("BDEBSTRAP_HOOKS", HOOKS_DIR),
                 ("BDEBSTRAP_NAME", "Debian-unstable"),
                 ("BDEBSTRAP_OUTPUT_DIR", "/tmp/bdebstrap-output"),
             ],
