@@ -1,3 +1,10 @@
+bdebstrap (0.4.0-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Depend on shellcheck for Shell code checks
+
+ -- Benjamin Drung <bdrung@debian.org>  Fri, 10 Dec 2021 17:30:40 +0100
+
 bdebstrap (0.3.0-1) unstable; urgency=medium
 
   * New upstream release:
