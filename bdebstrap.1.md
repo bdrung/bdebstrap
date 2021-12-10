@@ -294,6 +294,9 @@ environment variables specified via the *env* configuration option or the
 **\--env** parameter. **bdebstrap** sets following environment variables by
 default to be consumed by the hooks:
 
+**BDEBSTRAP_HOOKS**
+:   Path to the hooks provided by bdebstrap.
+
 **BDEBSTRAP_NAME**
 :   name of the generated golden image which is set via the **name**
     configuration option of the **\--name** parameter.
@@ -303,6 +306,27 @@ default to be consumed by the hooks:
     that are placed inside this directory will be copied out of the image into
     the output directory. This temporary directory will be removed in a final
     cleanup hook.
+
+Following hook scripts are shipped with **bdebstrap**:
+
+**disable-units**
+:   Disable services / systemd units.
+
+**enable-units**
+:   Enable services / systemd units.
+
+Example usage for the hook scripts:
+
+```yaml
+---
+mmdebstrap:
+  customize-hooks:
+    - $BDEBSTRAP_HOOKS/disable-units "$1" apt-daily.timer cron
+    - $BDEBSTRAP_HOOKS/enable-units "$1" systemd-timesyncd
+  suite: bullseye
+  target: root.tar
+  variant: important
+```
 
 # EXAMPLES
 

@@ -14,21 +14,31 @@
 
 """Test configuration handling of bdebstrap."""
 
+import contextlib
+import io
 import logging
 import os
 import tempfile
 import unittest
+import unittest.mock
 
-from bdebstrap import Config, dict_merge, parse_args
+from bdebstrap import HOOKS_DIR, Config, dict_merge, parse_args
 
 EXAMPLE_CONFIG_DIR = os.path.join(os.path.dirname(__file__), "..", "examples")
 TEST_CONFIG_DIR = os.path.join(os.path.dirname(__file__), "configs")
+
+
+def get_subset(dict_, keys):
+    """Return a dictionary that only contains the items for the given keys."""
+    return {key: value for key, value in dict_.items() if key in keys}
 
 
 class TestArguments(unittest.TestCase):
     """
     This unittest class tests the argument parsing.
     """
+
+    maxDiff = None
 
     def test_debug(self):
         """Test --debug argument parsing."""
@@ -53,7 +63,24 @@ class TestArguments(unittest.TestCase):
                 "--setup-hook=",
             ]
         )
-        self.assertDictContainsSubset(
+        self.assertEqual(
+            get_subset(
+                args.__dict__,
+                {
+                    "aptopt",
+                    "architectures",
+                    "cleanup_hook",
+                    "components",
+                    "config",
+                    "customize_hook",
+                    "dpkgopt",
+                    "essential_hook",
+                    "keyring",
+                    "mirrors",
+                    "packages",
+                    "setup_hook",
+                },
+            ),
             {
                 "aptopt": [],
                 "architectures": [],
@@ -68,7 +95,6 @@ class TestArguments(unittest.TestCase):
                 "packages": [],
                 "setup_hook": [],
             },
-            args.__dict__,
         )
 
     def test_no_args(self):
@@ -113,8 +139,10 @@ class TestArguments(unittest.TestCase):
 
     def test_malformed_env(self):
         """Test malformed --env parameter (missing equal sign)."""
-        with self.assertRaises(SystemExit):
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit):
             parse_args(["--env", "invalid"])
+        self.assertIn("Failed to parse --env 'invalid'.", stderr.getvalue())
 
     def test_mirrors_with_spaces(self):
         """Test --mirrors with leading/trailing spaces."""
@@ -127,15 +155,13 @@ class TestArguments(unittest.TestCase):
                 "\tdeb http://deb.debian.org/debian unstable contrib ",
             ]
         )
-        self.assertDictContainsSubset(
-            {
-                "mirrors": [
-                    "deb http://deb.debian.org/debian unstable main",
-                    "deb http://deb.debian.org/debian unstable non-free",
-                    "deb http://deb.debian.org/debian unstable contrib",
-                ],
-            },
-            args.__dict__,
+        self.assertEqual(
+            args.mirrors,
+            [
+                "deb http://deb.debian.org/debian unstable main",
+                "deb http://deb.debian.org/debian unstable non-free",
+                "deb http://deb.debian.org/debian unstable contrib",
+            ],
         )
 
     def test_optional_args(self):
@@ -153,7 +179,8 @@ class TestArguments(unittest.TestCase):
                 "deb http://deb.debian.org/debian unstable contrib",
             ]
         )
-        self.assertDictContainsSubset(
+        self.assertEqual(
+            get_subset(args.__dict__, {"mirrors", "suite", "target"}),
             {
                 "mirrors": [
                     "deb http://deb.debian.org/debian unstable main",
@@ -163,7 +190,6 @@ class TestArguments(unittest.TestCase):
                 "suite": "unstable",
                 "target": "unstable.tar",
             },
-            args.__dict__,
         )
 
     def test_positional_args(self):
@@ -182,7 +208,8 @@ class TestArguments(unittest.TestCase):
                 "deb http://deb.debian.org/debian unstable contrib",
             ]
         )
-        self.assertDictContainsSubset(
+        self.assertEqual(
+            get_subset(args.__dict__, {"mirrors", "suite", "target"}),
             {
                 "mirrors": [
                     "deb http://deb.debian.org/debian unstable main",
@@ -192,7 +219,6 @@ class TestArguments(unittest.TestCase):
                 "suite": "unstable",
                 "target": "unstable.tar",
             },
-            args.__dict__,
         )
 
     def test_split(self):
@@ -210,11 +236,7 @@ class TestArguments(unittest.TestCase):
             ]
         )
         self.assertEqual(
-            {
-                k: v
-                for k, v in args.__dict__.items()
-                if k in {"architectures", "components", "packages"}
-            },
+            get_subset(args.__dict__, {"architectures", "components", "packages"}),
             {
                 "architectures": ["amd64", "i386"],
                 "components": ["main", "non-free", "contrib"],
@@ -343,6 +365,7 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(
             config.env_items(),
             [
+                ("BDEBSTRAP_HOOKS", HOOKS_DIR),
                 ("BDEBSTRAP_NAME", "Debian-unstable"),
                 ("BDEBSTRAP_OUTPUT_DIR", "/tmp/bdebstrap-output"),
             ],

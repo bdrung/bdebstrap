@@ -1,0 +1,32 @@
+#!/bin/sh
+set -eu
+
+# Copyright (C) 2021, Benjamin Drung <bdrung@posteo.de>
+# SPDX-License-Identifier: ISC
+
+# Enable services / systemd units in a chroot environment.
+
+if test "$#" = 0; then
+    echo "${0##*/}: Called without required CHROOT_DIR argument." >&2
+    echo "usage: ${0##*/} CHROOT_DIR service/systemd_unit [service/system_unit...]" >&2
+    exit 1
+fi
+
+chroot_directory="$1"
+shift
+
+for unit in "$@"; do
+    if test -e "${chroot_directory}/etc/systemd/system/${unit}" || \
+       test -e "${chroot_directory}/lib/systemd/system/${unit}" || \
+       test -e "${chroot_directory}/usr/lib/systemd/system/${unit}" || \
+       test -e "${chroot_directory}/etc/systemd/system/${unit}.service" || \
+       test -e "${chroot_directory}/lib/systemd/system/${unit}.service" || \
+       test -e "${chroot_directory}/usr/lib/systemd/system/${unit}.service" || \
+       test -e "${chroot_directory}/etc/init.d/$unit"; then
+        echo "${0##*/}: Enabling unit $unit..." >&2
+        echo "${0##*/}: Calling chroot \"${chroot_directory}\" /bin/systemctl enable \"$unit\"" >&2
+        chroot "${chroot_directory}" /bin/systemctl enable "$unit"
+    else
+        echo "${0##*/}: Unit $unit not found. Skipping enabling it." >&2
+    fi
+done

@@ -1,3 +1,10 @@
+bdebstrap 0.4.0 (2021-12-10)
+============================
+
+* tests: Catch and check output on stderr
+* tests: Replace deprecated `assertDictContainsSubset`
+* Add `disable-units` and `enable-units` hooks
+
 bdebstrap 0.3.0 (2021-11-08)
 ============================
 
