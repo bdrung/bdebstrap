@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
     setup(
         name="bdebstrap",
-        version="0.3.0",
+        version="0.4.0",
         description="Benjamin's multi-mirror Debian chroot creation tool",
         long_description=LONG_DESCRIPTION,
         long_description_content_type="text/markdown",
