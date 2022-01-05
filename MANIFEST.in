@@ -3,4 +3,5 @@ include LICENSE
 include NEWS.md
 include bdebstrap.1.md
 include bdebstrap.py
+include system-testing
 include examples/*.yaml

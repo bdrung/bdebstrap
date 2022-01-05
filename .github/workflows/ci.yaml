@@ -39,6 +39,32 @@ jobs:
           fail_ci_if_error: true
           files: ./coverage.xml
 
+  system-testing:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        container:
+          # - debian:testing  # missing ubuntu-keyring
+          # - debian:unstable  # APT Debian bug #1002646 with mmdebstrap 0.8.2
+          - ubuntu:impish
+          - ubuntu:rolling
+    container:
+      image: ${{ matrix.container }}
+      options: --privileged
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: >
+          apt-get update &&
+          apt-get install --yes debian-archive-keyring distro-info-data
+          dpkg-dev mmdebstrap python3-ruamel.yaml python3 squashfs-tools-ng
+          ubuntu-keyring
+      - name: Run system-testing
+        run: ./system-testing
+
   yamllint:
     runs-on: ubuntu-latest
     container:
