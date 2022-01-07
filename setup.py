@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Copyright (C) 2019-2021, Benjamin Drung <bdrung@posteo.de>
+# Copyright (C) 2019-2022, Benjamin Drung <bdrung@posteo.de>
 #
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
