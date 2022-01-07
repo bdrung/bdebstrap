@@ -720,7 +720,7 @@ def prepare_output_dir(output_dir, force, simulate=False):
                         os.remove(path)
         else:
             logger.error(
-                "The output directory '%s' already exist and is not empty. "
+                "The output directory '%s' already exists and is not empty. "
                 "Use --force to remove it.",
                 output_dir,
             )
