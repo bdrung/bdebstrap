@@ -24,6 +24,7 @@ import subprocess
 
 from setuptools import setup
 
+APT_SOLVERS = ["apt-solvers/check-kernel-packages"]
 HOOKS = ["hooks/disable-units", "hooks/enable-units"]
 MAN_PAGES = ["bdebstrap.1"]
 
@@ -98,5 +99,9 @@ if __name__ == "__main__":
         install_requires=["ruamel.yaml"],
         scripts=["bdebstrap"],
         py_modules=[],
-        data_files=[("/usr/share/man/man1", MAN_PAGES), ("/usr/share/bdebstrap/hooks", HOOKS)],
+        data_files=[
+            ("/usr/share/bdebstrap/apt-solvers", APT_SOLVERS),
+            ("/usr/share/bdebstrap/hooks", HOOKS),
+            ("/usr/share/man/man1", MAN_PAGES),
+        ],
     )

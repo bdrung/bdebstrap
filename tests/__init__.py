@@ -37,7 +37,7 @@ def get_path(code_file):
 
 def get_source_files():
     """Return a list of sources files/directories (to check with flake8/pylint)."""
-    scripts = ["bdebstrap"]
+    scripts = ["apt-solvers/check-kernel-packages", "bdebstrap"]
     modules = ["tests"]
     py_files = ["setup.py"]
 

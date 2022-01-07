@@ -1,0 +1,220 @@
+#!/usr/bin/python3
+
+# Copyright (C) 2022 Benjamin Drung <bdrung@posteo.de>
+#
+# Permission to use, copy, modify, and/or distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+# pylint: disable=invalid-name
+# pylint: enable=invalid-name
+
+"""APT solver which checks that only one kernel is installed."""
+
+import argparse
+import collections
+import logging
+import os
+import subprocess
+import sys
+
+LOG_FORMAT = "%(asctime)s %(name)s %(levelname)s: %(message)s"
+__script_name__ = os.path.basename(sys.argv[0]) if __name__ == "__main__" else __name__
+
+
+class InputEDSP:
+    """
+    Input deb822 formatted file following the APT External Dependency
+    Solver Protocol (EDSP) version 0.5.
+
+    See
+    https://salsa.debian.org/apt-team/apt/blob/master/doc/external-dependency-solver-protocol.md
+    """
+
+    def __init__(self, stream):
+        self.content = stream.read()
+        self.install = None
+        self._packages_by_id = None
+        self._packages_by_name = None
+
+        # Parse the first paragraph
+        self._line_iterator = self.content.splitlines()
+        for line in self._line_iterator:
+            try:
+                key, value = line.split(":", 1)
+                if key == "Install":
+                    self.install = value.strip().split(" ")
+            except ValueError:
+                break
+
+    @property
+    def packages_by_id(self):
+        """Return a dictionary mapping APT IDs to packages."""
+        if self._packages_by_id is None:
+            self._parse_packages()
+        return self._packages_by_id
+
+    @property
+    def packages_by_name(self):
+        """Return a dictionary mapping names to a list containing all packages with that name."""
+        if self._packages_by_name is None:
+            self._parse_packages()
+        return self._packages_by_name
+
+    def _parse_packages(self):
+        # Parse the remaining paragraphs
+        logger = logging.getLogger(__script_name__)
+        logger.info("Parsing input EDSP...")
+        self._packages_by_id = {}
+        self._packages_by_name = collections.defaultdict(list)
+        paragraph = {}
+        for line in self._line_iterator:
+            try:
+                if line[0] == " ":
+                    # Ignore parsing multi-line deb822 entries for now.
+                    continue
+                key, value = line.split(":", 1)
+                paragraph[key] = value.strip()
+            except (IndexError, ValueError):
+                if "APT-ID" in paragraph:
+                    self._packages_by_id[paragraph["APT-ID"]] = paragraph
+                if "Package" in paragraph:
+                    if paragraph.get("Architecture") != "all":
+                        key = f"{paragraph['Package']}:{paragraph['Architecture']}"
+                    else:
+                        key = paragraph["Package"]
+                    self._packages_by_name[key].append(paragraph)
+                paragraph = {}
+        if "APT-ID" in paragraph:
+            self._packages_by_id[paragraph["APT-ID"]] = paragraph
+        if "Package" in paragraph:
+            if paragraph.get("Architecture") != "all":
+                key = f"{paragraph['Package']}:{paragraph['Architecture']}"
+            else:
+                key = paragraph["Package"]
+            self._packages_by_name[key].append(paragraph)
+        logger.info("Parsed %i packages from the input EDSP.", len(self._packages_by_id))
+
+    def is_essential(self, package_name):
+        """Check if the given package is an essential package.
+
+        A package is consiteder essential if at least one version of
+        it in the archive is marked as essential.
+        """
+        packages = self.packages_by_name.get(package_name)
+        if not packages:
+            packages = self.packages_by_name.get(package_name.split(":")[0], [])
+
+        for package in packages:
+            if package.get("Essential") == "yes":
+                return True
+        return False
+
+    def needs_check(self):
+        """Check if this APT resolver run should be checked.
+
+        mmdebstrap calls APT three times. The first time, only essential packages
+        are installed, the second time only apt is installed, and the third time
+        the remaining packages are installed. Only the third run needs to be
+        checked.
+        """
+        if len(self.install) == 1 and self.install[0].split(":")[0] == "apt":
+            # No need to check when only apt is installed
+            return False
+
+        for package in self.install:
+            if not self.is_essential(package):
+                # At least one package is not essential.
+                # Assuming third run installing remaining packages
+                return True
+
+        # All packages are essential
+        return False
+
+
+class OutputEDSP:
+    """
+    Output deb822 formatted file following the APT External Dependency
+    Solver Protocol (EDSP) version 0.5.
+
+    See
+    https://salsa.debian.org/apt-team/apt/blob/master/doc/external-dependency-solver-protocol.md
+    """
+
+    def __init__(self, text, input_edsp):
+        self.input_edsp = input_edsp
+        self._line_iterator = text.splitlines()
+        self.install = []
+        for line in self._line_iterator:
+            try:
+                key, value = line.split(":", 1)
+                if key == "Install":
+                    self.install.append(value.strip())
+            except ValueError:
+                pass
+
+    def installed_packages(self):
+        """Return the list of all installed packages."""
+        return [self.input_edsp.packages_by_id[apt_id]["Package"] for apt_id in self.install]
+
+    def kernel_packages(self):
+        """Return a list of installed kernel packages."""
+        return [p for p in self.installed_packages() if p.startswith("linux-image")]
+
+
+def main():
+    """APT solver which checks that only one kernel is installed."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "--input", help="Input EDSP (default: standard input stdin)")
+    parser.add_argument(
+        "-o",
+        "--output",
+        help="Output EDSP (default: query /usr/lib/apt/solvers/apt using the input EDSP)",
+    )
+    args = parser.parse_args()
+    logging.basicConfig(format=LOG_FORMAT, level=logging.INFO)
+    logger = logging.getLogger(__script_name__)
+
+    if args.input:
+        with open(args.input, encoding="utf-8") as input_edsp_file:
+            input_edsp = InputEDSP(input_edsp_file)
+    else:
+        input_edsp = InputEDSP(sys.stdin)
+
+    if args.output:
+        with open(args.output, encoding="utf-8") as output_edsp_file:
+            output_edsp = OutputEDSP(output_edsp_file.read(), input_edsp)
+    else:
+        output = subprocess.check_output(
+            ["/usr/lib/apt/solvers/apt"], input=input_edsp.content.encode()
+        )
+        sys.stdout.buffer.write(output)
+        output_edsp = OutputEDSP(output.decode(), input_edsp)
+
+    if input_edsp.needs_check():
+        logger.info("Checking if exactly one kernel will be installed...")
+        kernel_packages = output_edsp.kernel_packages()
+        if len(kernel_packages) == 1:
+            logger.info("Exactly one kernel is to be installed: %s", kernel_packages[0])
+        else:
+            logger.error(
+                "Found %i kernels instead of one: %s",
+                len(kernel_packages),
+                ", ".join(kernel_packages),
+            )
+            return 1
+    else:
+        logger.info("Not checking if exactly one kernel will be installed.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
