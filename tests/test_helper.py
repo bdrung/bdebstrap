@@ -15,10 +15,11 @@
 """Test helper functions of bdebstrap."""
 
 import os
+import tempfile
 import unittest
 import unittest.mock
 
-from bdebstrap import clamp_mtime, duration_str, escape_cmd
+from bdebstrap import clamp_mtime, duration_str, escape_cmd, prepare_output_dir
 
 
 class TestClampMtime(unittest.TestCase):
@@ -108,3 +109,49 @@ class TestEscapeCmd(unittest.TestCase):
             r"-f='${Package}\t${Version}\n' -W "
             r'> \"\$1/tmp/bdebstrap/manifest\""',
         )
+
+
+class TestPrepareOutputDir(unittest.TestCase):
+    """
+    This unittest class tests the prepare_output_dir function.
+    """
+
+    TMP_PREFIX = "bdebstrap-"
+
+    def test_dry_run(self):
+        """Test that dry run does not create the directory."""
+        with tempfile.TemporaryDirectory(prefix=self.TMP_PREFIX) as tmpdir:
+            output_dir = os.path.join(tmpdir, "unstable")
+            self.assertTrue(prepare_output_dir(output_dir, False, simulate=True))
+            self.assertFalse(os.path.isdir(output_dir))
+
+    def test_force(self):
+        """Test replacing an existing output directory."""
+        with tempfile.TemporaryDirectory(prefix=self.TMP_PREFIX) as tmpdir:
+            output_dir = os.path.join(tmpdir, "unstable")
+            os.makedirs(output_dir)
+            os.mknod(os.path.join(output_dir, "root.tar"))
+
+            self.assertTrue(prepare_output_dir(output_dir, True))
+            self.assertTrue(os.path.isdir(output_dir))
+            self.assertEqual(os.listdir(output_dir), [])
+
+    def test_existing(self):
+        """Test failure when output directory already exists."""
+        with tempfile.TemporaryDirectory(prefix=self.TMP_PREFIX) as tmpdir:
+            output_dir = os.path.join(tmpdir, "unstable")
+            os.makedirs(output_dir)
+            os.mknod(os.path.join(output_dir, "root.tar"))
+
+            with self.assertLogs("bdebstrap", level="ERROR") as context_manager:
+                self.assertFalse(prepare_output_dir(output_dir, False))
+            self.assertIn("already exists and is not empty", context_manager.output[-1])
+            self.assertTrue(os.path.isdir(output_dir))
+            self.assertEqual(os.listdir(output_dir), ["root.tar"])
+
+    def test_missing_output_dir(self):
+        """Test creating the missing output directory."""
+        with tempfile.TemporaryDirectory(prefix=self.TMP_PREFIX) as tmpdir:
+            output_dir = os.path.join(tmpdir, "unstable")
+            self.assertTrue(prepare_output_dir(output_dir, False))
+            self.assertTrue(os.path.isdir(output_dir))
