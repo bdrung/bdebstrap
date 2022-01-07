@@ -59,9 +59,9 @@ jobs:
       - name: Install dependencies
         run: >
           apt-get update &&
-          apt-get install --yes debian-archive-keyring distro-info-data
-          dpkg-dev mmdebstrap python3-ruamel.yaml python3 squashfs-tools-ng
-          ubuntu-keyring
+          apt-get install --yes debian-archive-keyring diffoscope
+          distro-info-data dpkg-dev mmdebstrap python3-ruamel.yaml python3
+          squashfs-tools-ng ubuntu-keyring
       - name: Run system-testing
         run: ./system-testing
 

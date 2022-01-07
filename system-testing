@@ -33,7 +33,11 @@ test_example1() {
     header "Example 1: Minimal Debian unstable tarball"
     "$bdebstrap_binary" -v -c "$examples_dir/Debian-unstable.yaml" --name example1 --mode root
     check_existing example1 config.yaml manifest root.tar.xz
-    rm -r example1
+    "$bdebstrap_binary" -v -c example1/config.yaml -o example1-rebuild
+    check_existing example1-rebuild config.yaml manifest root.tar.xz
+    echo "Info: Check that 'example1' and 'example1-rebuild' are bit-by-bit identical..."
+    diffoscope example1 example1-rebuild
+    rm -r example1 example1-rebuild
 }
 
 test_example2() {
