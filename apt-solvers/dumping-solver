@@ -1,0 +1,13 @@
+#!/bin/sh
+set -exu
+
+i=0
+while [ -e /tmp/mysolver/$i ]; do i=$((i+1)); done
+mkdir -p /tmp/mysolver/$i
+
+cat > /tmp/mysolver/$i/input.edsp
+cat /tmp/mysolver/$i/input.edsp | /usr/lib/apt/solvers/apt | tee /tmp/mysolver/$i/output.edsp
+
+for aptid in $(grep-dctrl '' /tmp/mysolver/$i/output.edsp -s Install -n); do
+    grep-dctrl --exact-match --field APT-ID $aptid /tmp/mysolver/$i/input.edsp
+done > /tmp/mysolver/$i/output.pkglist
