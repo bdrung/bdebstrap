@@ -134,6 +134,7 @@ class TestMmdebstrap(unittest.TestCase):
                     "suite": "unstable",
                     "target": "example.tar.xz",
                 },
+                name="extra_opts",
             )
         )
         self.assertEqual(

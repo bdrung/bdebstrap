@@ -89,7 +89,9 @@ class Mmdebstrap:
         if "mode" in mmdebstrap:
             cmd.append(f"--mode={mmdebstrap['mode']}")
         if "aptopts" in mmdebstrap:
-            cmd += [f"--aptopt={aptopt}" for aptopt in mmdebstrap["aptopts"]]
+            cmd += [
+                f"--aptopt={self.config.replace_env(aptopt)}" for aptopt in mmdebstrap["aptopts"]
+            ]
         if "keyrings" in mmdebstrap:
             cmd += [f"--keyring={keyring}" for keyring in mmdebstrap["keyrings"]]
         if "dpkgopts" in mmdebstrap:
@@ -522,6 +524,7 @@ class Config(dict):
     def __init__(self, *args, **kwargs):
         super().__init__(self, *args, **kwargs)
         self.logger = logging.getLogger(__script_name__)
+        self.curdir = os.getcwd()
         self.yaml = ruamel.yaml.YAML()
         self.yaml.explicit_start = True
         self.yaml.indent(offset=2, sequence=4)
@@ -594,6 +597,7 @@ class Config(dict):
         return sorted(
             list(self.get("env", {}).items())
             + [
+                (self._ENV_PREFIX + "CURDIR", self.curdir),
                 (self._ENV_PREFIX + "HOOKS", HOOKS_DIR),
                 (self._ENV_PREFIX + "NAME", self["name"]),
                 (self._ENV_PREFIX + "OUTPUT_DIR", OUTPUT_DIR),
@@ -650,6 +654,12 @@ class Config(dict):
             del mmdebstrap["include"]
 
         dict_merge(self, config)
+
+    def replace_env(self, string):
+        """TODO"""
+        for env, value in self.env_items():
+            string = re.sub(f"(\\${re.escape(env)})(?![A-Za-z0-9])", str(value), string)
+        return string
 
     def sanitize_packages(self):
         """Sanitize packages list by removing duplicates (keeping the latest one)."""

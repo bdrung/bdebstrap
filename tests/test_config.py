@@ -365,6 +365,7 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(
             config.env_items(),
             [
+                ("BDEBSTRAP_CURDIR", config.curdir),
                 ("BDEBSTRAP_HOOKS", HOOKS_DIR),
                 ("BDEBSTRAP_NAME", "Debian-unstable"),
                 ("BDEBSTRAP_OUTPUT_DIR", "/tmp/bdebstrap-output"),
@@ -386,6 +387,24 @@ class TestConfig(unittest.TestCase):
                     "variant": "minbase",
                 }
             },
+        )
+
+    def test_replace_env_curdir(self):
+        """Test Config.replace_env() to replace $BDEBSTRAP_CURDIR."""
+        config = Config(name="test")
+        config.set_source_date_epoch()
+        self.assertEqual(
+            config.replace_env(
+                'Dir::Etc::preferencesparts "$BDEBSTRAP_CURDIR/etc/apt/preferences.d/"'
+            ),
+            f'Dir::Etc::preferencesparts "{config.curdir}/etc/apt/preferences.d/"',
+        )
+
+    def test_replace_env_non_matching_curdir(self):
+        """Test Config.replace_env() to not replace non-matching variable name."""
+        config = Config(name="test")
+        self.assertEqual(
+            config.replace_env("$BDEBSTRAP_CURDIRNAME/etc"), "$BDEBSTRAP_CURDIRNAME/etc"
         )
 
     def test_yaml_rendering(self):
