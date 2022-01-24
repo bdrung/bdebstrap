@@ -17,7 +17,6 @@ jobs:
           - debian:unstable
           - ubuntu:hirsute
           - ubuntu:impish
-          - ubuntu:rolling
     container:
       image: ${{ matrix.container }}
     steps:
@@ -48,7 +47,6 @@ jobs:
           # - debian:testing  # missing ubuntu-keyring
           # - debian:unstable  # APT Debian bug #1002646 with mmdebstrap 0.8.2
           - ubuntu:impish
-          - ubuntu:rolling
     container:
       image: ${{ matrix.container }}
       options: --privileged
