@@ -45,7 +45,7 @@ jobs:
       matrix:
         container:
           # - debian:testing  # missing ubuntu-keyring
-          # - debian:unstable  # APT Debian bug #1002646 with mmdebstrap 0.8.2
+          - debian:unstable
           - ubuntu:impish
     container:
       image: ${{ matrix.container }}
