@@ -12,9 +12,9 @@ jobs:
       fail-fast: false
       matrix:
         container:
-          - debian:bullseye
-          - debian:testing
-          - debian:unstable
+          - debian:bullseye-slim
+          - debian:testing-slim
+          - debian:unstable-slim
           - ubuntu:hirsute
           - ubuntu:impish
     container:
@@ -44,8 +44,8 @@ jobs:
       fail-fast: false
       matrix:
         container:
-          # - debian:testing  # missing ubuntu-keyring
-          - debian:unstable
+          # - debian:testing-slim  # missing ubuntu-keyring
+          - debian:unstable-slim
           - ubuntu:impish
     container:
       image: ${{ matrix.container }}
@@ -66,7 +66,7 @@ jobs:
   yamllint:
     runs-on: ubuntu-latest
     container:
-      image: debian:testing
+      image: debian:testing-slim
     steps:
       - uses: actions/checkout@v2
       - name: Install dependencies
