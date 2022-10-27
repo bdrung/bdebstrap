@@ -29,8 +29,7 @@ class TestMmdebstrap(unittest.TestCase):
 
     maxDiff = None
 
-    @staticmethod
-    def setUp():
+    def setUp(self):
         logging.getLogger(__script_name__).setLevel(logging.WARNING)
 
     def test_debian_example(self):
