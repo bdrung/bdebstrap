@@ -16,19 +16,22 @@
 
 """Setup for bdebstrap"""
 
-import distutils.cmd
-import distutils.command.build
-import distutils.command.clean
 import os
 import subprocess
 
-from setuptools import setup
+from setuptools import Command, setup
+
+# Setuptools replaces the `distutils` module in `sys.modules`.
+# pylint: disable=wrong-import-order
+import distutils.log  # isort:skip, pylint: disable=deprecated-module
+import distutils.command.build  # isort:skip, pylint: disable=deprecated-module
+import distutils.command.clean  # isort:skip, pylint: disable=deprecated-module
 
 HOOKS = ["hooks/disable-units", "hooks/enable-units"]
 MAN_PAGES = ["bdebstrap.1"]
 
 
-class DocCommand(distutils.cmd.Command):
+class DocCommand(Command):
     """A custom command to build the documentation using pandoc."""
 
     description = "run pandoc to generate man pages"
