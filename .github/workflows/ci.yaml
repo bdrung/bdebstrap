@@ -6,49 +6,103 @@ on:  # yamllint disable-line rule:truthy
   - pull_request
 
 jobs:
+  install:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        container:
+          - debian:bullseye-slim
+          - debian:testing-slim
+          - debian:unstable-slim
+          - ubuntu:jammy
+          - ubuntu:kinetic
+    container:
+      image: ${{ matrix.container }}
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: >
+          apt-get update &&
+          apt-get install --no-install-recommends --yes
+          pandoc python3 python3-ruamel.yaml python3-setuptools
+      - name: Run build
+        run: python3 setup.py build
+      - name: Run install
+        run: python3 setup.py install
+
   unittest:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         container:
-          - debian:bullseye
-          - debian:testing
-          - debian:unstable
-          - ubuntu:hirsute
-          - ubuntu:impish
-          - ubuntu:rolling
+          - debian:bullseye-slim
+          - debian:testing-slim
+          - debian:unstable-slim
+          - ubuntu:jammy
+          - ubuntu:kinetic
     container:
       image: ${{ matrix.container }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install dependencies
         run: >
           apt-get update &&
-          apt-get install --yes black isort pylint python3 python3-coverage
-          python3-flake8 python3-ruamel.yaml shellcheck
+          apt-get install --no-install-recommends --yes black isort pylint
+          python3 python3-coverage python3-flake8 python3-ruamel.yaml
+          shellcheck
       - name: Run unit tests
         run: |
           python3 -m coverage run -m unittest discover -v
           python3 -m coverage xml
       - name: Install dependencies for Codecov
-        run: apt-get install --yes curl git
+        run: >
+          apt-get install --no-install-recommends --yes
+          ca-certificates curl git
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           fail_ci_if_error: true
           files: ./coverage.xml
 
+  system-testing:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        container:
+          # - debian:testing-slim  # missing ubuntu-keyring
+          - debian:unstable-slim
+          - ubuntu:jammy
+          - ubuntu:kinetic
+    container:
+      image: ${{ matrix.container }}
+      options: --privileged
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: >
+          apt-get update &&
+          apt-get install --no-install-recommends --yes debian-archive-keyring
+          diffoscope-minimal distro-info-data dpkg-dev mmdebstrap
+          python3-ruamel.yaml python3 squashfs-tools-ng ubuntu-keyring
+      - name: Run system-testing
+        run: ./system-testing
+
   yamllint:
     runs-on: ubuntu-latest
     container:
-      image: debian:testing
+      image: debian:testing-slim
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install dependencies
         run: |
           apt-get update
-          apt-get install --yes --no-install-recommends yamllint
+          apt-get install --no-install-recommends --yes yamllint
       - name: Run yamllint
         run: |
           yamllint .

@@ -1,4 +1,4 @@
-# Copyright (C) 2020-2021 Benjamin Drung <bdrung@posteo.de>
+# Copyright (C) 2020-2022 Benjamin Drung <bdrung@posteo.de>
 #
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -29,15 +29,14 @@ class TestMmdebstrap(unittest.TestCase):
 
     maxDiff = None
 
-    @staticmethod
-    def setUp():
+    def setUp(self):
         logging.getLogger(__script_name__).setLevel(logging.WARNING)
 
     def test_debian_example(self):
         """Test Mmdebstrap with Debian unstable config."""
         mmdebstrap = Mmdebstrap(
-            {
-                "mmdebstrap": {
+            Config(
+                mmdebstrap={
                     "architectures": ["i386"],
                     "install-recommends": True,
                     "keyrings": ["/usr/share/keyrings/debian-archive-keyring.gpg"],
@@ -46,7 +45,7 @@ class TestMmdebstrap(unittest.TestCase):
                     "target": "example.tar.xz",
                     "variant": "minbase",
                 }
-            }
+            )
         )
         self.assertEqual(
             mmdebstrap.construct_parameters("/output"),
@@ -69,7 +68,9 @@ class TestMmdebstrap(unittest.TestCase):
 
     def test_dry_run(self):
         """Test Mmdebstrap with dry run set."""
-        mmdebstrap = Mmdebstrap({"mmdebstrap": {"suite": "unstable", "target": "example.tar.xz"}})
+        mmdebstrap = Mmdebstrap(
+            Config(mmdebstrap={"suite": "unstable", "target": "example.tar.xz"})
+        )
         self.assertEqual(
             mmdebstrap.construct_parameters("/output", True),
             [
@@ -88,8 +89,8 @@ class TestMmdebstrap(unittest.TestCase):
     def test_hooks(self):
         """Test Mmdebstrap with custom hooks."""
         mmdebstrap = Mmdebstrap(
-            {
-                "mmdebstrap": {
+            Config(
+                mmdebstrap={
                     "cleanup-hooks": ['rm -f "$0/etc/udev/rules.d/70-persistent-net.rules"'],
                     "customize-hooks": [
                         'chroot "$0" update-alternatives --set editor /usr/bin/vim.basic'
@@ -100,7 +101,7 @@ class TestMmdebstrap(unittest.TestCase):
                     "suite": "buster",
                     "target": "buster.tar.xz",
                 }
-            }
+            )
         )
         self.assertEqual(
             mmdebstrap.construct_parameters("/output"),
@@ -123,16 +124,16 @@ class TestMmdebstrap(unittest.TestCase):
     def test_extra_opts(self):
         """Test Mmdebstrap with extra options."""
         mmdebstrap = Mmdebstrap(
-            {
-                "mmdebstrap": {
+            Config(
+                mmdebstrap={
                     "aptopts": ['Acquire::http { Proxy "http://proxy:3128/"; }'],
                     "components": ["main", "non-free", "contrib"],
                     "dpkgopts": ["force-confdef", "force-confold"],
                     "packages": ["bash-completions", "vim"],
                     "suite": "unstable",
                     "target": "example.tar.xz",
-                }
-            }
+                },
+            )
         )
         self.assertEqual(
             mmdebstrap.construct_parameters("/output"),
@@ -199,7 +200,7 @@ class TestMmdebstrap(unittest.TestCase):
     def test_log_level_debug(self):
         """Test Mmdebstrap with log level debug."""
         logging.getLogger(__script_name__).setLevel(logging.DEBUG)
-        mmdebstrap = Mmdebstrap({})
+        mmdebstrap = Mmdebstrap(Config())
         self.assertEqual(
             mmdebstrap.construct_parameters("/output")[0:2], ["mmdebstrap", "--debug"]
         )
@@ -207,19 +208,19 @@ class TestMmdebstrap(unittest.TestCase):
     def test_log_level_error(self):
         """Test Mmdebstrap with log level error."""
         logging.getLogger(__script_name__).setLevel(logging.ERROR)
-        mmdebstrap = Mmdebstrap({})
+        mmdebstrap = Mmdebstrap(Config())
         self.assertEqual(mmdebstrap.construct_parameters("/output")[0:2], ["mmdebstrap", "-q"])
 
     def test_log_level_info(self):
         """Test Mmdebstrap with log level info."""
         logging.getLogger(__script_name__).setLevel(logging.INFO)
-        mmdebstrap = Mmdebstrap({})
+        mmdebstrap = Mmdebstrap(Config())
         self.assertEqual(mmdebstrap.construct_parameters("/output")[0:2], ["mmdebstrap", "-v"])
 
     def test_log_level_warning(self):
         """Test Mmdebstrap with log level warning."""
         logging.getLogger(__script_name__).setLevel(logging.WARNING)
-        mmdebstrap = Mmdebstrap({})
+        mmdebstrap = Mmdebstrap(Config())
         self.assertEqual(
             mmdebstrap.construct_parameters("/output")[0:2],
             ["mmdebstrap", '--essential-hook=mkdir -p "$1/tmp/bdebstrap-output"'],

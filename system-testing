@@ -1,0 +1,88 @@
+#!/bin/sh
+set -eu
+
+curdir=$(readlink -f "${0%/*}")
+bdebstrap_binary="${1-$curdir/bdebstrap}"
+examples_dir="${2-$curdir/examples}"
+
+DEB_HOST_ARCH=$(dpkg-architecture -q DEB_HOST_ARCH)
+
+# change to temporary directory to not interfere with the source
+cd "${AUTOPKGTEST_TMP-${TMPDIR-/tmp}}"
+
+check_existing() {
+    local directory="$1"
+    shift
+
+    for file in "$@"; do
+        if test ! -e "${directory}/${file}"; then
+            echo "Error: Expected generated file '${directory}/${file}' not found. Content of '${directory}':" >&2
+            ls "${directory}"
+            exit 1
+        fi
+    done
+}
+
+header() {
+    printf "\n+------------------------------------------------------------------------------+\n"
+    printf "| %-76s |\n" "$1"
+    printf "+------------------------------------------------------------------------------+\n\n"
+}
+
+test_example1() {
+    header "Example 1: Minimal Debian unstable tarball"
+    "$bdebstrap_binary" -v -c "$examples_dir/Debian-unstable.yaml" --name example1 --mode root
+    check_existing example1 config.yaml manifest root.tar.xz
+    "$bdebstrap_binary" -v -c example1/config.yaml -o example1-rebuild
+    check_existing example1-rebuild config.yaml manifest root.tar.xz
+    echo "Info: Check that 'example1' and 'example1-rebuild' are bit-by-bit identical..."
+    diffoscope example1 example1-rebuild
+    rm -r example1 example1-rebuild
+}
+
+test_example2() {
+    header "Example 2: Debian live system"
+    sed '/  - upload ~/d' "$examples_dir/Debian-bullseye-live.yaml" > Debian-bullseye-live.yaml
+    if test "$DEB_HOST_ARCH" != amd64; then
+        # Use host architecture to avoid testing building for foreign architecture
+        case "$DEB_HOST_ARCH" in
+            arm64) kernel="linux-image-cloud-arm64" ;;
+            armel) kernel="linux-image-rpi" ;;
+            armhf) kernel="linux-image-armmp-lpae" ;;
+            i386) kernel="linux-image-686-pae" ;;
+            mips64el|mipsel) kernel="linux-image-octeon" ;;
+            ppc64el) kernel="linux-image-powerpc64le" ;;
+            *) kernel="linux-image-${DEB_HOST_ARCH}" ;;
+        esac
+        sed -i "s/linux-image-cloud-amd64/${kernel}/" Debian-bullseye-live.yaml
+        sed -i "s/amd64/${DEB_HOST_ARCH}/" Debian-bullseye-live.yaml
+    fi
+    "$bdebstrap_binary" -v -c Debian-bullseye-live.yaml --packages iputils-ping --name example2 --mode root
+    check_existing example2 config.yaml initrd.img manifest root.squashfs vmlinuz
+    xattr=$(rdsquashfs -x /bin/ping example2/root.squashfs)
+    if test -z "$xattr"; then
+        echo "Error: /bin/ping from example2/root.squashfs lacks security xattrs!" >&2
+        return 1
+    else
+        echo "Info: /bin/ping has xattrs: $xattr"
+    fi
+    rm -r example2
+}
+
+test_example3() {
+    header "Example 3: Minimal Ubuntu 20.04 LTS tarball"
+    case "$DEB_HOST_ARCH" in
+        amd64|arm64|armhf|i386|ppc64el|riscv64|s390x)
+            "$bdebstrap_binary" -v -c "$examples_dir/Ubuntu-20.04.yaml" --name example3 --mode root
+            check_existing example3 config.yaml manifest root.tar.xz
+            rm -r example3
+            ;;
+        *)
+            echo "Info: Skipping this example, because Ubuntu does not support architecture ${DEB_HOST_ARCH}."
+            ;;
+    esac
+}
+
+test_example1
+test_example2
+test_example3
