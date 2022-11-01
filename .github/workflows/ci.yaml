@@ -6,6 +6,31 @@ on:  # yamllint disable-line rule:truthy
   - pull_request
 
 jobs:
+  install:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        container:
+          - debian:bullseye-slim
+          - debian:testing-slim
+          - debian:unstable-slim
+          - ubuntu:jammy
+    container:
+      image: ${{ matrix.container }}
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: >
+          apt-get update &&
+          apt-get install --no-install-recommends --yes
+          pandoc python3 python3-ruamel.yaml python3-setuptools
+      - name: Run build
+        run: python3 setup.py build
+      - name: Run install
+        run: python3 setup.py install
+
   unittest:
     runs-on: ubuntu-latest
     strategy:
