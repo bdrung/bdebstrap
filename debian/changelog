@@ -1,3 +1,12 @@
+bdebstrap (0.4.1-1) unstable; urgency=medium
+
+  * New upstream release.
+    - setup: Fix building with setuptools 65.5.0 (Closes: #1022513)
+  * Use system-testing script in autopkgtest
+  * Bump Standards-Version to 4.6.1
+
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 01 Nov 2022 11:19:59 +0100
+
 bdebstrap (0.4.0-1) unstable; urgency=medium
 
   * New upstream release.
