@@ -16,6 +16,7 @@ jobs:
           - debian:testing-slim
           - debian:unstable-slim
           - ubuntu:jammy
+          - ubuntu:kinetic
     container:
       image: ${{ matrix.container }}
       options: --privileged
@@ -41,6 +42,7 @@ jobs:
           - debian:testing-slim
           - debian:unstable-slim
           - ubuntu:jammy
+          - ubuntu:kinetic
     container:
       image: ${{ matrix.container }}
     steps:
@@ -74,6 +76,7 @@ jobs:
           # - debian:testing-slim  # missing ubuntu-keyring
           - debian:unstable-slim
           - ubuntu:jammy
+          - ubuntu:kinetic
     container:
       image: ${{ matrix.container }}
       options: --privileged
