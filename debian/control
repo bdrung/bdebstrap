@@ -17,7 +17,7 @@ Standards-Version: 4.6.1
 Homepage: https://github.com/bdrung/bdebstrap
 Rules-Requires-Root: no
 Vcs-Browser: https://github.com/bdrung/bdebstrap
-Vcs-Git: https://github.com/bdrung/bdebstrap.git -b debian/master
+Vcs-Git: https://github.com/bdrung/bdebstrap.git -b debian/unstable
 
 Package: bdebstrap
 Architecture: all
