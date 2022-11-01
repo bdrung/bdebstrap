@@ -1,3 +1,11 @@
+bdebstrap 0.4.1 (2022-11-01)
+============================
+
+* Add `system-testing` script and move the integration tests into it
+* tests: Address complaints from pylint 2.15.5
+* setup: Fix building with setuptools 65.5.0
+  ([Debian bug #1022513](https://bugs.debian.org/1022513))
+
 bdebstrap 0.4.0 (2021-12-10)
 ============================
 
