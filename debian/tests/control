@@ -8,10 +8,12 @@ Depends: bdebstrap,
 Restrictions: allow-stderr
 Features: test-name=unittest
 
-Tests: examples
+Test-Command: ./system-testing bdebstrap
 Depends: debian-archive-keyring,
+         diffoscope-minimal,
          distro-info-data,
          squashfs-tools-ng,
          ubuntu-keyring,
          @
 Restrictions: needs-root, allow-stderr
+Features: test-name=system-testing
