@@ -1,3 +1,4 @@
 version=4
-opts=pgpsigurlmangle=s/$/.asc/ \
-  https://github.com/bdrung/bdebstrap/releases .*/bdebstrap-(\d\S+)\.tar\.(?:gz|xz)
+opts=pgpsigurlmangle=s/$/.asc/,searchmode=plain \
+  https://api.github.com/repos/bdrung/@PACKAGE@/releases?per_page=100 \
+  https://github.com/bdrung/@PACKAGE@/releases/download/[^/]+/@PACKAGE@-@ANY_VERSION@@ARCHIVE_EXT@
