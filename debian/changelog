@@ -1,3 +1,10 @@
+bdebstrap (0.5.0-1) unstable; urgency=medium
+
+  * New upstream release.
+  * debian/watch: Scan api.github.com for releases
+
+ -- Benjamin Drung <bdrung@debian.org>  Fri, 11 Nov 2022 00:32:30 +0100
+
 bdebstrap (0.4.1-1) unstable; urgency=medium
 
   * New upstream release.
