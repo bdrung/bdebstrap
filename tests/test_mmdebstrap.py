@@ -129,6 +129,7 @@ class TestMmdebstrap(unittest.TestCase):
                     "aptopts": ['Acquire::http { Proxy "http://proxy:3128/"; }'],
                     "components": ["main", "non-free", "contrib"],
                     "dpkgopts": ["force-confdef", "force-confold"],
+                    "format": "tar",
                     "packages": ["bash-completions", "vim"],
                     "suite": "unstable",
                     "target": "example.tar.xz",
@@ -139,6 +140,7 @@ class TestMmdebstrap(unittest.TestCase):
             mmdebstrap.construct_parameters("/output"),
             [
                 "mmdebstrap",
+                "--format=tar",
                 '--aptopt=Acquire::http { Proxy "http://proxy:3128/"; }',
                 "--dpkgopt=force-confdef",
                 "--dpkgopt=force-confold",

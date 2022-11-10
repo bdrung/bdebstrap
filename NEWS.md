@@ -1,3 +1,10 @@
+bdebstrap 0.5.0 (2022-11-10)
+============================
+
+* feat: Add support for mmdebstrap's `--format` option
+  ([bug #4](https://github.com/bdrung/bdebstrap/issues/4))
+
+
 bdebstrap 0.4.1 (2022-11-01)
 ============================
 

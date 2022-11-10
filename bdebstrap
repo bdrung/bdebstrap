@@ -50,6 +50,7 @@ MMDEBSTRAP_OPTS = {
     "customize-hooks": list,
     "dpkgopts": list,
     "essential-hooks": list,
+    "format": str,
     "hostname": str,
     "install-recommends": bool,
     "keyrings": list,
@@ -88,6 +89,8 @@ class Mmdebstrap:
             cmd.append(f"--variant={mmdebstrap['variant']}")
         if "mode" in mmdebstrap:
             cmd.append(f"--mode={mmdebstrap['mode']}")
+        if "format" in mmdebstrap:
+            cmd.append(f"--format={mmdebstrap['format']}")
         if "aptopts" in mmdebstrap:
             cmd += [f"--aptopt={aptopt}" for aptopt in mmdebstrap["aptopts"]]
         if "keyrings" in mmdebstrap:
@@ -300,6 +303,11 @@ def parse_args(args):  # pylint: disable=too-many-statements
             "Choose how to perform the chroot operation and create a filesystem with "
             "ownership information different from the current user."
         ),
+    )
+    parser.add_argument(
+        "--format",
+        choices=["auto", "directory", "dir", "tar", "squashfs", "sqfs", "ext2", "null"],
+        help="Choose the output format.",
     )
     parser.add_argument(
         "--aptopt", action="append", help="Pass arbitrary options or configuration files to apt."
@@ -558,6 +566,8 @@ class Config(dict):
             self._set_mmdebstrap_option("variant", args.variant)
         if args.mode:
             self._set_mmdebstrap_option("mode", args.mode)
+        if args.format:
+            self._set_mmdebstrap_option("format", args.format)
         if args.aptopt:
             self._append_mmdebstrap_option("aptopts", args.aptopt)
         if args.keyring:

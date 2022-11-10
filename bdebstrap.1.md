@@ -1,5 +1,5 @@
 ---
-date: 2020-05-26
+date: 2022-11-06
 footer: bdebstrap
 header: "bdebstrap's Manual"
 layout: page
@@ -23,6 +23,7 @@ bdebstrap - YAML config based multi-mirror Debian chroot creation tool
 [**-f**|**\--force**] [**-t**|**\--tmpdir** *TMPDIR*]
 [**\--variant** {*extract*,*custom*,*essential*,*apt*,*required*,*minbase*,*buildd*,*important*,*debootstrap*,*-*,*standard*}]
 [**\--mode** {*auto*,*sudo*,*root*,*unshare*,*fakeroot*,*fakechroot*,*proot*,*chrootless*}]
+[**\--format** {*auto*,*directory*,*dir*,*tar*,*squashfs*,*sqfs*,*ext2*,*null*}]
 [**\--aptopt** *APTOPT*] [**\--keyring** *KEYRING*] [**\--dpkgopt** *DPKGOPT*]
 [**\--hostname** *HOSTNAME*] [**\--install-recommends**]
 [**\--packages**|**\--include** *PACKAGES*] [**\--components** *COMPONENTS*]
@@ -112,6 +113,9 @@ output directory as *config.yaml*.
 **\--mode** {*auto*,*sudo*,*root*,*unshare*,*fakeroot*,*fakechroot*,*proot*,*chrootless*}
 :   Choose how to perform the chroot operation and create a filesystem with
     ownership information different from the current user.
+
+[**\--format** {*auto*,*directory*,*dir*,*tar*,*squashfs*,*sqfs*,*ext2*,*null*}
+:   Choose the output format.
 
 **\--aptopt** *APTOPT*
 :   Pass arbitrary options or configuration files to apt.
@@ -211,6 +215,11 @@ be specified:
 **dpkgopts**
 :   list of arbitrary options or configuration files (string) to dpkg.
     Additional dpkg options can be specified with **\--dpkgopt**.
+
+**format**
+:   Choose the output format. It needs to be one of *auto*, *directory*, *dir*,
+    *tar*, *squashfs*, *sqfs*, *ext2*, *null*. See mmdebstrap(1) for details.
+    Can be overridden by **\--format**.
 
 **hostname**
 :   String. If specified, write the given *hostname* into */etc/hostname* in
