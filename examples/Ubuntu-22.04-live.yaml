@@ -1,0 +1,29 @@
+---
+mmdebstrap:
+  architectures:
+    - amd64
+  cleanup-hooks:
+    - cp /dev/null "$1/etc/hostname"
+    - if test -f "$1/etc/resolv.conf"; then cp /dev/null "$1/etc/resolv.conf"; fi
+  components:
+    - main
+    - universe
+  customize-hooks:
+    - cp --preserve=timestamps -v "$1"/boot/vmlinuz-* "$1${BDEBSTRAP_OUTPUT_DIR?}/vmlinuz"
+    - cp --preserve=timestamps -v "$1"/boot/initrd.img-* "$1${BDEBSTRAP_OUTPUT_DIR?}/initrd.img"
+    - mkdir -p "$1/root/.ssh"
+    - upload ~/.ssh/id_rsa.pub /root/.ssh/authorized_keys
+    # Set 'ubuntu' as root password. Create a secure root password with "openssl passwd -6 $password"!
+    - chroot "$1" usermod -p
+      '$6$OhLGTekTaIjk0Fkd$6zUqG4Bd5UZEkARJmN1gAkhv9kZ9hbqtrzqNCm0BfUx62BKf1FkZxVOKqz4895d1LwzgHw4FLgWbvUwpnCJQY/' root
+  keyrings:
+    - /usr/share/keyrings/ubuntu-archive-keyring.gpg
+  mode: unshare
+  packages:
+    - linux-image-virtual
+    - live-boot
+    - openssh-server
+    - ubuntu-minimal
+  suite: jammy
+  target: root.squashfs
+  variant: minbase
