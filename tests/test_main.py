@@ -66,12 +66,7 @@ class TestMain(unittest.TestCase):
     ):
         """Test failure of mmdebstrap call."""
         mmdebstrap_call_mock.side_effect = subprocess.CalledProcessError(42, "mmdebstrap")
-        args = [
-            "-c",
-            os.path.join(EXAMPLE_CONFIG_DIR, "Debian-unstable.yaml"),
-            "--name",
-            "foobar",
-        ]
+        args = ["-c", os.path.join(EXAMPLE_CONFIG_DIR, "Debian-unstable.yaml"), "--name", "foobar"]
         with self.assertLogs("bdebstrap", level="ERROR") as context_manager:
             self.assertEqual(main(args), 1)
             self.assertEqual(

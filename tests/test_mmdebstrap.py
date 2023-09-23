@@ -133,7 +133,7 @@ class TestMmdebstrap(unittest.TestCase):
                     "packages": ["bash-completions", "vim"],
                     "suite": "unstable",
                     "target": "example.tar.xz",
-                },
+                }
             )
         )
         self.assertEqual(
