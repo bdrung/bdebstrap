@@ -392,12 +392,39 @@ class TestConfig(unittest.TestCase):
             },
         )
 
+    def test_sanitize_packages_debs(self) -> None:
+        """Test sanitize_packages method: multiple local .debs"""
+        config = Config()
+        config["mmdebstrap"] = {"packages": ["/home/user/foo.deb", "/home/user/bar.deb"]}
+        config.sanitize_packages()
+        self.assertEqual(
+            config["mmdebstrap"]["packages"], ["/home/user/foo.deb", "/home/user/bar.deb"]
+        )
+
+    def test_sanitize_packages_duplicate_debs(self) -> None:
+        """Test sanitize_packages method: remove duplicate local .debs."""
+        config = Config()
+        config["mmdebstrap"] = {
+            "packages": ["./bdebstrap_0.5_all.deb", "../bdebstrap_0.4_all.deb"]
+        }
+        config.sanitize_packages()
+        self.assertEqual(config["mmdebstrap"]["packages"], ["../bdebstrap_0.4_all.deb"])
+
     def test_sanitize_packages_duplicates(self) -> None:
         """Test sanitize_packages method: remove duplicates."""
         config = Config()
         config["mmdebstrap"] = {"packages": ["less/jammy-updates", "more", "less=590-1build1"]}
         config.sanitize_packages()
         self.assertEqual(config["mmdebstrap"]["packages"], ["less=590-1build1", "more"])
+
+    def test_sanitize_packages_pattern(self) -> None:
+        """Test sanitize_packages method: APT pattern"""
+        config = Config()
+        config["mmdebstrap"] = {"packages": ["?priority(required)", "?priority(important)"]}
+        config.sanitize_packages()
+        self.assertEqual(
+            config["mmdebstrap"]["packages"], ["?priority(required)", "?priority(important)"]
+        )
 
     def test_yaml_rendering(self):
         """Test that config.yaml is formatted correctly."""

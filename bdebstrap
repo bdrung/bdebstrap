@@ -23,6 +23,7 @@ import collections
 import io
 import logging
 import os
+import pathlib
 import re
 import shutil
 import subprocess
@@ -661,7 +662,7 @@ class Config(dict):
 
         dict_merge(self, config)
 
-    def sanitize_packages(self):
+    def sanitize_packages(self) -> None:
         """Sanitize packages list by removing duplicates (keeping the latest one)."""
         if "mmdebstrap" not in self or "packages" not in self["mmdebstrap"]:
             return
@@ -671,16 +672,17 @@ class Config(dict):
             if not package:
                 # Cover commented out and empty entries
                 continue
-            if "=" in package:
-                name, version = package.split("=", 1)
-                packages[name] = "=" + version
-            elif "/" in package:
-                name, version = package.split("/", 1)
-                packages[name] = "/" + version
+            if package[0] in ("?", "!", "~", "("):
+                # Do not fiddle with APT patterns
+                packages[package] = package
+            elif package.startswith("/") or package.startswith("./") or package.startswith("../"):
+                name = pathlib.Path(package).stem.split("_", 1)[0]
+                packages[name] = package
             else:
-                packages[package] = ""
+                name = re.split("[=/]", package, maxsplit=1)[0]
+                packages[name] = package
 
-        self["mmdebstrap"]["packages"] = [k + v for k, v in packages.items()]
+        self["mmdebstrap"]["packages"] = list(packages.values())
 
     def save(self, config_filename, simulate=False):
         """Save configuration to given config filename."""
