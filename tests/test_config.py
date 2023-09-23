@@ -392,6 +392,13 @@ class TestConfig(unittest.TestCase):
             },
         )
 
+    def test_sanitize_packages_duplicates(self) -> None:
+        """Test sanitize_packages method: remove duplicates."""
+        config = Config()
+        config["mmdebstrap"] = {"packages": ["less/jammy-updates", "more", "less=590-1build1"]}
+        config.sanitize_packages()
+        self.assertEqual(config["mmdebstrap"]["packages"], ["less=590-1build1", "more"])
+
     def test_yaml_rendering(self):
         """Test that config.yaml is formatted correctly."""
         config = Config()
