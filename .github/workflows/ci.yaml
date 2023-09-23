@@ -16,7 +16,6 @@ jobs:
           - debian:testing-slim
           - debian:unstable-slim
           - ubuntu:jammy
-          - ubuntu:kinetic
           - ubuntu:lunar
     container:
       image: ${{ matrix.container }}
@@ -43,7 +42,6 @@ jobs:
           - debian:testing-slim
           - debian:unstable-slim
           - ubuntu:jammy
-          - ubuntu:kinetic
           - ubuntu:lunar
     container:
       image: ${{ matrix.container }}
@@ -78,7 +76,6 @@ jobs:
           # - debian:testing-slim  # missing ubuntu-keyring
           - debian:unstable-slim
           - ubuntu:jammy
-          - ubuntu:kinetic
           - ubuntu:lunar
     container:
       image: ${{ matrix.container }}
