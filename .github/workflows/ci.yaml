@@ -18,6 +18,7 @@ jobs:
           - debian:unstable-slim
           - ubuntu:jammy
           - ubuntu:lunar
+          - ubuntu:mantic
     container:
       image: ${{ matrix.container }}
       options: --privileged
@@ -45,6 +46,7 @@ jobs:
           - debian:unstable-slim
           - ubuntu:jammy
           - ubuntu:lunar
+          - ubuntu:mantic
     container:
       image: ${{ matrix.container }}
     steps:
@@ -79,6 +81,7 @@ jobs:
           - debian:unstable-slim
           - ubuntu:jammy
           - ubuntu:lunar
+          - ubuntu:mantic
     container:
       image: ${{ matrix.container }}
       options: --privileged
