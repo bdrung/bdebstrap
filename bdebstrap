@@ -72,17 +72,20 @@ class Mmdebstrap:
         self.config = config
         self.logger = logging.getLogger(__script_name__)
 
+    def _get_mmdebstrap_log_level_parameters(self) -> list[str]:
+        log_level = self.logger.getEffectiveLevel()
+        if log_level >= logging.ERROR:
+            return ["-q"]
+        if log_level <= logging.DEBUG:
+            return ["--debug"]
+        if log_level <= logging.INFO:
+            return ["-v"]
+        return []
+
     def construct_parameters(self, output_dir, simulate=False):
         """Construct the parameter for mmdebstrap from a given dictionary."""
         # pylint: disable=too-many-branches
-        cmd = ["mmdebstrap"]
-        log_level = self.logger.getEffectiveLevel()
-        if log_level >= logging.ERROR:
-            cmd += ["-q"]
-        elif log_level <= logging.DEBUG:
-            cmd += ["--debug"]
-        elif log_level <= logging.INFO:
-            cmd += ["-v"]
+        cmd = ["mmdebstrap"] + self._get_mmdebstrap_log_level_parameters()
         if simulate:
             cmd += ["--simulate"]
         mmdebstrap = self.config.get("mmdebstrap", {})
