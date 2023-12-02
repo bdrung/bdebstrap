@@ -96,6 +96,7 @@ class TestMmdebstrap(unittest.TestCase):
                         'chroot "$0" update-alternatives --set editor /usr/bin/vim.basic'
                     ],
                     "essential-hooks": ["copy-in /etc/bash.bashrc /etc"],
+                    "extract-hooks": ['find "$1" -xtype l'],
                     "hostname": "example",
                     "setup-hooks": [],
                     "suite": "buster",
@@ -107,6 +108,7 @@ class TestMmdebstrap(unittest.TestCase):
             mmdebstrap.construct_parameters("/output"),
             [
                 "mmdebstrap",
+                '--extract-hook=find "$1" -xtype l',
                 '--essential-hook=mkdir -p "$1/tmp/bdebstrap-output"',
                 "--essential-hook=copy-in /etc/bash.bashrc /etc",
                 '--customize-hook=chroot "$0" update-alternatives --set editor /usr/bin/vim.basic',

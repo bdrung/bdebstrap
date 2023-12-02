@@ -1,5 +1,5 @@
 ---
-date: 2022-11-06
+date: 2023-12-02
 footer: bdebstrap
 header: "bdebstrap's Manual"
 layout: page
@@ -28,8 +28,9 @@ bdebstrap - YAML config based multi-mirror Debian chroot creation tool
 [**\--hostname** *HOSTNAME*] [**\--install-recommends**]
 [**\--packages**|**\--include** *PACKAGES*] [**\--components** *COMPONENTS*]
 [**\--architectures** *ARCHITECTURES*]
-[**\--setup-hook** *COMMAND*] [**\--essential-hook** *COMMAND*]
-[**\--customize-hook** *COMMAND*] [**\--cleanup-hook** *COMMAND*]
+[**\--setup-hook** *COMMAND*] [**\--extract-hook** *COMMAND*]
+[**\--essential-hook** *COMMAND*] [**\--customize-hook** *COMMAND*]
+[**\--cleanup-hook** *COMMAND*]
 [**\--suite** *SUITE*] [**\--target** *TARGET*] [**\--mirrors** *MIRRORS*]
 [*SUITE* [*TARGET* [*MIRROR*...]]]
 
@@ -151,6 +152,11 @@ output directory as *config.yaml*.
     executables and thus cannot be chroot-ed into. This option can be specified
     multiple times.
 
+**\--extract-hook** *COMMAND*
+:   Execute arbitrary *COMMAND* after the Essential:yes packages have been
+    installed but before installing them. This option can be specified multiple
+    times.
+
 **\--essential-hook** *COMMAND*
 :   Execute arbitrary *COMMAND* after the Essential:yes packages have been
     installed, but before installing the remaining packages. This option can be
@@ -260,6 +266,12 @@ be specified:
     directory does not contain any executables and thus cannot be chroot-ed
     into. See **HOOKS** in mmdebstrap(1) for more information and examples.
     Additional setup hooks can be specified with **\--setup-hook**.
+
+**extract-hooks**
+:   list of extract hooks (string). Execute arbitrary commands after the
+    Essential:yes packages have been installed but before installing them. See
+    **HOOKS** in mmdebstrap(1) for more information and examples. Additional
+    extract hooks can be specified with **\--extract-hook**.
 
 **essential-hooks**
 :   list of essential hooks (string). Execute arbitrary commands after the
