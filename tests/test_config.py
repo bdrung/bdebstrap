@@ -345,6 +345,45 @@ class TestConfig(unittest.TestCase):
             },
         )
 
+    def test_add_command_line_arguments_no_config(self):
+        """Test Config.add_command_line_arguments() with no config file."""
+        args = parse_args(
+            [
+                "--cleanup-hook",
+                'cp /dev/null "$1/etc/hostname"',
+                "--customize-hook",
+                'chroot "$1" apt-get update',
+                "--env",
+                "KEY=VALUE",
+                "--essential-hook",
+                "copy-in /etc/bash.bashrc /etc",
+                "--hostname",
+                "cobb",
+                "--install-recommends",
+                "--name",
+                "ubuntu-24.04",
+                "--setup-hook",
+                'echo root:x:0:0:root:/root:/bin/sh > "$1/etc/passwd"',
+            ]
+        )
+        config = Config()
+        config.add_command_line_arguments(args)
+        self.assertEqual(
+            config,
+            {
+                "env": {"KEY": "VALUE"},
+                "mmdebstrap": {
+                    "cleanup-hooks": ['cp /dev/null "$1/etc/hostname"'],
+                    "customize-hooks": ['chroot "$1" apt-get update'],
+                    "essential-hooks": ["copy-in /etc/bash.bashrc /etc"],
+                    "hostname": "cobb",
+                    "install-recommends": True,
+                    "setup-hooks": ['echo root:x:0:0:root:/root:/bin/sh > "$1/etc/passwd"'],
+                },
+                "name": "ubuntu-24.04",
+            },
+        )
+
     @staticmethod
     def test_check_example():
         """Test example unstable.yaml file."""
