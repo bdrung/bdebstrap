@@ -59,6 +59,7 @@ class TestArguments(unittest.TestCase):
                 "--essential-hook=",
                 "--extract-hook=",
                 "--keyring=",
+                "--skip=",
                 "--mirrors=",
                 "--packages=",
                 "--setup-hook=",
@@ -81,6 +82,7 @@ class TestArguments(unittest.TestCase):
                     "mirrors",
                     "packages",
                     "setup_hook",
+                    "skip",
                 },
             ),
             {
@@ -97,6 +99,7 @@ class TestArguments(unittest.TestCase):
                 "mirrors": [],
                 "packages": [],
                 "setup_hook": [],
+                "skip": [],
             },
         )
 
@@ -130,6 +133,7 @@ class TestArguments(unittest.TestCase):
                 "packages": None,
                 "setup_hook": None,
                 "simulate": False,
+                "skip": None,
                 "suite": None,
                 "target": None,
                 "tmpdir": None,
@@ -366,6 +370,7 @@ class TestConfig(unittest.TestCase):
                 "--hostname",
                 "cobb",
                 "--install-recommends",
+                "--skip=check/signed-by",
                 "--name",
                 "ubuntu-24.04",
                 "--setup-hook",
@@ -386,6 +391,7 @@ class TestConfig(unittest.TestCase):
                     "hostname": "cobb",
                     "install-recommends": True,
                     "setup-hooks": ['echo root:x:0:0:root:/root:/bin/sh > "$1/etc/passwd"'],
+                    "skip": ["check/signed-by"],
                 },
                 "name": "ubuntu-24.04",
             },

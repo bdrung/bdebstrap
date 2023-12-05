@@ -134,6 +134,7 @@ class TestMmdebstrap(unittest.TestCase):
                     "format": "tar",
                     "packages": ["bash-completions", "vim"],
                     "suite": "unstable",
+                    "skip": ["cleanup/apt", "update"],
                     "target": "example.tar.xz",
                 }
             )
@@ -148,6 +149,7 @@ class TestMmdebstrap(unittest.TestCase):
                 "--dpkgopt=force-confold",
                 "--include=bash-completions,vim",
                 "--components=main,non-free,contrib",
+                "--skip=cleanup/apt,update",
                 '--essential-hook=mkdir -p "$1/tmp/bdebstrap-output"',
                 "--customize-hook=chroot \"$1\" dpkg-query -f='${Package}\\t${Version}\\n' -W "
                 '> "$1/tmp/bdebstrap-output/manifest"',

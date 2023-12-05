@@ -30,7 +30,7 @@ bdebstrap - YAML config based multi-mirror Debian chroot creation tool
 [**\--architectures** *ARCHITECTURES*]
 [**\--setup-hook** *COMMAND*] [**\--extract-hook** *COMMAND*]
 [**\--essential-hook** *COMMAND*] [**\--customize-hook** *COMMAND*]
-[**\--cleanup-hook** *COMMAND*]
+[**\--cleanup-hook** *COMMAND*] [**\--skip** *STAGE*]
 [**\--suite** *SUITE*] [**\--target** *TARGET*] [**\--mirrors** *MIRRORS*]
 [*SUITE* [*TARGET* [*MIRROR*...]]]
 
@@ -171,6 +171,10 @@ output directory as *config.yaml*.
 :   Execute arbitrary *COMMAND* after all customize hooks have been executed.
     This option can be specified multiple times.
 
+**\--skip** *STAGE*
+:   Comma or whitespace separated list of actions and safety checks to skip.
+    This option can be specified multiple times.
+
 **\--suite** *SUITE*, *SUITE*
 :   The suite may be a valid release code name (eg, sid, stretch, jessie) or
     a symbolic name (eg, unstable, testing, stable, oldstable).
@@ -291,6 +295,14 @@ be specified:
 :   list of cleanup hooks (string). Cleanup hooks are just hooks that are run
     directly after all other customize hooks. See **customize-hooks** above.
     Additional cleanup hooks can be specified with **\--cleanup-hook**.
+
+**skip**
+:   list of stages to skip (string). mmdebstrap tries hard to implement
+    sensible defaults and will try to stop you before shooting yourself in the
+    foot. This option is for when you are sure you know what you are doing and
+    allows one to skip certain actions and safety checks. See section
+    **OPERATION** in mmdebstrap(1) for a list of possible arguments and their
+    context. Additional stages to skip can be specified with **\--skip**.
 
 **suite**
 :   String. The suite may be a valid release code name (eg, sid, stretch,
