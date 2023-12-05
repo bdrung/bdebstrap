@@ -22,7 +22,7 @@ bdebstrap - YAML config based multi-mirror Debian chroot creation tool
 [**-q**|**\--quiet**|**\--silent**|**-v**|**\--verbose**|**\--debug**]
 [**-f**|**\--force**] [**-t**|**\--tmpdir** *TMPDIR*]
 [**\--variant** {*extract*,*custom*,*essential*,*apt*,*required*,*minbase*,*buildd*,*important*,*debootstrap*,*-*,*standard*}]
-[**\--mode** {*auto*,*sudo*,*root*,*unshare*,*fakeroot*,*fakechroot*,*proot*,*chrootless*}]
+[**\--mode** {*auto*,*sudo*,*root*,*unshare*,*fakeroot*,*fakechroot*,*chrootless*}]
 [**\--format** {*auto*,*directory*,*dir*,*tar*,*squashfs*,*sqfs*,*ext2*,*null*}]
 [**\--aptopt** *APTOPT*] [**\--keyring** *KEYRING*] [**\--dpkgopt** *DPKGOPT*]
 [**\--hostname** *HOSTNAME*] [**\--install-recommends**]
@@ -111,7 +111,7 @@ output directory as *config.yaml*.
 **\--variant** {*extract*,*custom*,*essential*,*apt*,*required*,*minbase*,*buildd*,*important*,*debootstrap*,*-*,*standard*}
 :   Choose which package set to install.
 
-**\--mode** {*auto*,*sudo*,*root*,*unshare*,*fakeroot*,*fakechroot*,*proot*,*chrootless*}
+**\--mode** {*auto*,*sudo*,*root*,*unshare*,*fakeroot*,*fakechroot*,*chrootless*}
 :   Choose how to perform the chroot operation and create a filesystem with
     ownership information different from the current user.
 
@@ -253,7 +253,7 @@ be specified:
 **mode**
 :   Choose how to perform the chroot operation and create a filesystem with
     ownership information different from the current user. It needs to be one
-    of *auto*, *sudo*, *root*, *unshare*, *fakeroot*, *fakechroot*, *proot*, or
+    of *auto*, *sudo*, *root*, *unshare*, *fakeroot*, *fakechroot*, or
     *chrootless*. See mmdebstrap(1) for details. Can be overridden by
     **\--mode**.
 

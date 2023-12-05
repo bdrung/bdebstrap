@@ -306,7 +306,6 @@ def parse_args(args):  # pylint: disable=too-many-statements
             "unshare",
             "fakeroot",
             "fakechroot",
-            "proot",
             "chrootless",
         ],
         help=(
