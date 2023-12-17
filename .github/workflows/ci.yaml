@@ -16,7 +16,6 @@ jobs:
           - debian:bookworm-slim
           - debian:testing-slim
           - ubuntu:jammy
-          - ubuntu:lunar
           - ubuntu:mantic
     container:
       image: ${{ matrix.container }}
@@ -44,7 +43,6 @@ jobs:
           - debian:testing-slim
           - debian:unstable-slim
           - ubuntu:jammy
-          - ubuntu:lunar
           - ubuntu:mantic
     container:
       image: ${{ matrix.container }}
@@ -79,7 +77,6 @@ jobs:
           # - debian:testing-slim  # missing ubuntu-keyring
           - debian:unstable-slim
           - ubuntu:jammy
-          - ubuntu:lunar
           - ubuntu:mantic
     container:
       image: ${{ matrix.container }}
