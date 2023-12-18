@@ -13,7 +13,7 @@ Build-Depends: black,
                python3-ruamel.yaml,
                python3-setuptools,
                shellcheck
-Standards-Version: 4.6.1
+Standards-Version: 4.6.2
 Homepage: https://github.com/bdrung/bdebstrap
 Rules-Requires-Root: no
 Vcs-Browser: https://github.com/bdrung/bdebstrap
