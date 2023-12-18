@@ -1,3 +1,10 @@
+bdebstrap (0.6.0-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Bump Standards-Version to 4.6.2
+
+ -- Benjamin Drung <bdrung@debian.org>  Mon, 18 Dec 2023 17:10:45 +0100
+
 bdebstrap (0.5.0-1) unstable; urgency=medium
 
   * New upstream release.
