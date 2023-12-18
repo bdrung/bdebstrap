@@ -27,7 +27,7 @@ bdebstrap - YAML config based multi-mirror Debian chroot creation tool
 [**\--aptopt** *APTOPT*] [**\--keyring** *KEYRING*] [**\--dpkgopt** *DPKGOPT*]
 [**\--hostname** *HOSTNAME*] [**\--install-recommends**]
 [**\--packages**|**\--include** *PACKAGES*] [**\--components** *COMPONENTS*]
-[**\--architectures** *ARCHITECTURES*]
+[**\--architectures** *ARCHITECTURES*] [**\--hook-dir** *DIRECTORY*]
 [**\--setup-hook** *COMMAND*] [**\--extract-hook** *COMMAND*]
 [**\--essential-hook** *COMMAND*] [**\--customize-hook** *COMMAND*]
 [**\--cleanup-hook** *COMMAND*] [**\--skip** *STAGE*]
@@ -144,6 +144,16 @@ output directory as *config.yaml*.
 **\--architectures** *ARCHITECTURES*
 :   Comma or whitespace separated list of architectures. The first
     architecture is the native architecture inside the chroot.
+
+**\--hook-dir** *DIRECTORY*
+:   Execute scripts in *DIRECTORY* with filenames starting with "setup",
+    "extract", "essential" or "customize", at the respective stages during an
+    mmdebstrap run. The files must be marked executable. Their extension is
+    ignored. Subdirectories are not traversed. This option is a short‐hand for
+    specifying the remaining four hook options individually for each file in
+    the directory. If there are more than one script for a stage, then they are
+    added alphabetically. This is useful in cases, where a user wants to run the
+    same hooks frequently. This option can be specified multiple times.
 
 **\--setup-hook** *COMMAND*
 :   Execute arbitrary *COMMAND* right after initial setup (directory creation,
@@ -262,6 +272,17 @@ be specified:
     packages installed by the specified variant. Additional packages can be
     specified with **\--packages** or **\--include**. This setting is passed to
     **mmdebstrap** using the **\--include** parameter.
+
+**hook-dirs**
+:   list of hook directories (string). Execute scripts in the specified
+    directories with filenames starting with "setup", "extract", "essential" or
+    "customize", at the respective stages during an mmdebstrap run. The files
+    must be marked executable. Their extension is ignored. Subdirectories are
+    not traversed. This option is a short‐hand for specifying the remaining four
+    hook options individually for each file in the directory. If there are more
+    than one script for a stage, then they are added alphabetically. This is
+    useful in cases, where a user wants to run the same hooks frequently.
+    Additional hook directories can be specified with **\--hook-dir**.
 
 **setup-hooks**
 :   list of setup hooks (string). Execute arbitrary commands right after

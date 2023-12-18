@@ -53,6 +53,7 @@ MMDEBSTRAP_OPTS = {
     "essential-hooks": list,
     "extract-hooks": list,
     "format": str,
+    "hook-dirs": list,
     "hostname": str,
     "install-recommends": bool,
     "keyrings": list,
@@ -112,6 +113,8 @@ class Mmdebstrap:
             cmd.append(f"--architectures={','.join(mmdebstrap['architectures'])}")
         if "skip" in mmdebstrap:
             cmd.append(f"--skip={','.join(mmdebstrap['skip'])}")
+        if "hook-dirs" in mmdebstrap:
+            cmd += [f"--hook-dir={hook}" for hook in mmdebstrap["hook-dirs"]]
         if "setup-hooks" in mmdebstrap:
             cmd += [f"--setup-hook={hook}" for hook in mmdebstrap["setup-hooks"]]
         if "extract-hooks" in mmdebstrap:
@@ -406,6 +409,13 @@ def parse_args(args):  # pylint: disable=too-many-statements
         help="Execute arbitrary COMMAND after all customize hooks have been executed.",
     )
     parser.add_argument(
+        "--hook-dir",
+        metavar="DIRECTORY",
+        action="append",
+        help='Execute scripts in DIRECTORY with filenames starting with "setup", "extract",'
+        ' "essential" or "customize", at the respective stages during an mmdebstrap run.',
+    )
+    parser.add_argument(
         "--skip",
         metavar="STAGE",
         action="append",
@@ -506,6 +516,7 @@ def parse_args(args):  # pylint: disable=too-many-statements
     args.config = sanitize_list(args.config)
     args.dpkgopt = sanitize_list(args.dpkgopt)
     args.keyring = sanitize_list(args.keyring)
+    args.hook_dir = sanitize_list(args.hook_dir)
     args.setup_hook = sanitize_list(args.setup_hook)
     args.extract_hook = sanitize_list(args.extract_hook)
     args.essential_hook = sanitize_list(args.essential_hook)
@@ -610,6 +621,8 @@ class Config(dict):
             self._append_mmdebstrap_option("components", args.components)
         if args.architectures:
             self._append_mmdebstrap_option("architectures", args.architectures)
+        if args.hook_dir:
+            self._append_mmdebstrap_option("hook-dirs", args.hook_dir)
         if args.setup_hook:
             self._append_mmdebstrap_option("setup-hooks", args.setup_hook)
         if args.essential_hook:
