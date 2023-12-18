@@ -96,6 +96,7 @@ class TestMmdebstrap(unittest.TestCase):
                         'chroot "$0" update-alternatives --set editor /usr/bin/vim.basic'
                     ],
                     "essential-hooks": ["copy-in /etc/bash.bashrc /etc"],
+                    "extract-hooks": ['find "$1" -xtype l'],
                     "hostname": "example",
                     "setup-hooks": [],
                     "suite": "buster",
@@ -107,6 +108,7 @@ class TestMmdebstrap(unittest.TestCase):
             mmdebstrap.construct_parameters("/output"),
             [
                 "mmdebstrap",
+                '--extract-hook=find "$1" -xtype l',
                 '--essential-hook=mkdir -p "$1/tmp/bdebstrap-output"',
                 "--essential-hook=copy-in /etc/bash.bashrc /etc",
                 '--customize-hook=chroot "$0" update-alternatives --set editor /usr/bin/vim.basic',
@@ -130,10 +132,12 @@ class TestMmdebstrap(unittest.TestCase):
                     "components": ["main", "non-free", "contrib"],
                     "dpkgopts": ["force-confdef", "force-confold"],
                     "format": "tar",
+                    "hook-dirs": ["/usr/share/mmdebstrap/hooks/busybox"],
                     "packages": ["bash-completions", "vim"],
                     "suite": "unstable",
+                    "skip": ["cleanup/apt", "update"],
                     "target": "example.tar.xz",
-                },
+                }
             )
         )
         self.assertEqual(
@@ -146,6 +150,8 @@ class TestMmdebstrap(unittest.TestCase):
                 "--dpkgopt=force-confold",
                 "--include=bash-completions,vim",
                 "--components=main,non-free,contrib",
+                "--skip=cleanup/apt,update",
+                "--hook-dir=/usr/share/mmdebstrap/hooks/busybox",
                 '--essential-hook=mkdir -p "$1/tmp/bdebstrap-output"',
                 "--customize-hook=chroot \"$1\" dpkg-query -f='${Package}\\t${Version}\\n' -W "
                 '> "$1/tmp/bdebstrap-output/manifest"',

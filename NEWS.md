@@ -1,9 +1,20 @@
+bdebstrap 0.6.0 (2023-12-18)
+============================
+
+* examples: Add Ubuntu live system example
+* chore: format Python code with black 23.1
+* Fix sanitizing local .deb packages
+  ([bug #7](https://github.com/bdrung/bdebstrap/issues/7))
+* feat: Add support for mmdebstrap's --extract-hook option
+* feat: Add support for mmdebstrap's --skip option
+* feat: remove proot mode
+* feat: Add support for mmdebstrap's --hook-dir option
+
 bdebstrap 0.5.0 (2022-11-10)
 ============================
 
 * feat: Add support for mmdebstrap's `--format` option
   ([bug #4](https://github.com/bdrung/bdebstrap/issues/4))
-
 
 bdebstrap 0.4.1 (2022-11-01)
 ============================

@@ -1,5 +1,5 @@
 ---
-date: 2022-11-06
+date: 2023-12-02
 footer: bdebstrap
 header: "bdebstrap's Manual"
 layout: page
@@ -22,14 +22,15 @@ bdebstrap - YAML config based multi-mirror Debian chroot creation tool
 [**-q**|**\--quiet**|**\--silent**|**-v**|**\--verbose**|**\--debug**]
 [**-f**|**\--force**] [**-t**|**\--tmpdir** *TMPDIR*]
 [**\--variant** {*extract*,*custom*,*essential*,*apt*,*required*,*minbase*,*buildd*,*important*,*debootstrap*,*-*,*standard*}]
-[**\--mode** {*auto*,*sudo*,*root*,*unshare*,*fakeroot*,*fakechroot*,*proot*,*chrootless*}]
+[**\--mode** {*auto*,*sudo*,*root*,*unshare*,*fakeroot*,*fakechroot*,*chrootless*}]
 [**\--format** {*auto*,*directory*,*dir*,*tar*,*squashfs*,*sqfs*,*ext2*,*null*}]
 [**\--aptopt** *APTOPT*] [**\--keyring** *KEYRING*] [**\--dpkgopt** *DPKGOPT*]
 [**\--hostname** *HOSTNAME*] [**\--install-recommends**]
 [**\--packages**|**\--include** *PACKAGES*] [**\--components** *COMPONENTS*]
-[**\--architectures** *ARCHITECTURES*]
-[**\--setup-hook** *COMMAND*] [**\--essential-hook** *COMMAND*]
-[**\--customize-hook** *COMMAND*] [**\--cleanup-hook** *COMMAND*]
+[**\--architectures** *ARCHITECTURES*] [**\--hook-dir** *DIRECTORY*]
+[**\--setup-hook** *COMMAND*] [**\--extract-hook** *COMMAND*]
+[**\--essential-hook** *COMMAND*] [**\--customize-hook** *COMMAND*]
+[**\--cleanup-hook** *COMMAND*] [**\--skip** *STAGE*]
 [**\--suite** *SUITE*] [**\--target** *TARGET*] [**\--mirrors** *MIRRORS*]
 [*SUITE* [*TARGET* [*MIRROR*...]]]
 
@@ -110,7 +111,7 @@ output directory as *config.yaml*.
 **\--variant** {*extract*,*custom*,*essential*,*apt*,*required*,*minbase*,*buildd*,*important*,*debootstrap*,*-*,*standard*}
 :   Choose which package set to install.
 
-**\--mode** {*auto*,*sudo*,*root*,*unshare*,*fakeroot*,*fakechroot*,*proot*,*chrootless*}
+**\--mode** {*auto*,*sudo*,*root*,*unshare*,*fakeroot*,*fakechroot*,*chrootless*}
 :   Choose how to perform the chroot operation and create a filesystem with
     ownership information different from the current user.
 
@@ -144,12 +145,27 @@ output directory as *config.yaml*.
 :   Comma or whitespace separated list of architectures. The first
     architecture is the native architecture inside the chroot.
 
+**\--hook-dir** *DIRECTORY*
+:   Execute scripts in *DIRECTORY* with filenames starting with "setup",
+    "extract", "essential" or "customize", at the respective stages during an
+    mmdebstrap run. The files must be marked executable. Their extension is
+    ignored. Subdirectories are not traversed. This option is a short‐hand for
+    specifying the remaining four hook options individually for each file in
+    the directory. If there are more than one script for a stage, then they are
+    added alphabetically. This is useful in cases, where a user wants to run the
+    same hooks frequently. This option can be specified multiple times.
+
 **\--setup-hook** *COMMAND*
 :   Execute arbitrary *COMMAND* right after initial setup (directory creation,
     configuration of apt and dpkg, ...) but before any packages are downloaded
     or installed. At that point, the chroot directory does not contain any
     executables and thus cannot be chroot-ed into. This option can be specified
     multiple times.
+
+**\--extract-hook** *COMMAND*
+:   Execute arbitrary *COMMAND* after the Essential:yes packages have been
+    installed but before installing them. This option can be specified multiple
+    times.
 
 **\--essential-hook** *COMMAND*
 :   Execute arbitrary *COMMAND* after the Essential:yes packages have been
@@ -163,6 +179,10 @@ output directory as *config.yaml*.
 
 **\--cleanup-hook** *COMMAND*
 :   Execute arbitrary *COMMAND* after all customize hooks have been executed.
+    This option can be specified multiple times.
+
+**\--skip** *STAGE*
+:   Comma or whitespace separated list of actions and safety checks to skip.
     This option can be specified multiple times.
 
 **\--suite** *SUITE*, *SUITE*
@@ -243,7 +263,7 @@ be specified:
 **mode**
 :   Choose how to perform the chroot operation and create a filesystem with
     ownership information different from the current user. It needs to be one
-    of *auto*, *sudo*, *root*, *unshare*, *fakeroot*, *fakechroot*, *proot*, or
+    of *auto*, *sudo*, *root*, *unshare*, *fakeroot*, *fakechroot*, or
     *chrootless*. See mmdebstrap(1) for details. Can be overridden by
     **\--mode**.
 
@@ -253,6 +273,17 @@ be specified:
     specified with **\--packages** or **\--include**. This setting is passed to
     **mmdebstrap** using the **\--include** parameter.
 
+**hook-dirs**
+:   list of hook directories (string). Execute scripts in the specified
+    directories with filenames starting with "setup", "extract", "essential" or
+    "customize", at the respective stages during an mmdebstrap run. The files
+    must be marked executable. Their extension is ignored. Subdirectories are
+    not traversed. This option is a short‐hand for specifying the remaining four
+    hook options individually for each file in the directory. If there are more
+    than one script for a stage, then they are added alphabetically. This is
+    useful in cases, where a user wants to run the same hooks frequently.
+    Additional hook directories can be specified with **\--hook-dir**.
+
 **setup-hooks**
 :   list of setup hooks (string). Execute arbitrary commands right after
     initial setup (directory creation, configuration of apt and dpkg, ...) but
@@ -260,6 +291,12 @@ be specified:
     directory does not contain any executables and thus cannot be chroot-ed
     into. See **HOOKS** in mmdebstrap(1) for more information and examples.
     Additional setup hooks can be specified with **\--setup-hook**.
+
+**extract-hooks**
+:   list of extract hooks (string). Execute arbitrary commands after the
+    Essential:yes packages have been installed but before installing them. See
+    **HOOKS** in mmdebstrap(1) for more information and examples. Additional
+    extract hooks can be specified with **\--extract-hook**.
 
 **essential-hooks**
 :   list of essential hooks (string). Execute arbitrary commands after the
@@ -279,6 +316,14 @@ be specified:
 :   list of cleanup hooks (string). Cleanup hooks are just hooks that are run
     directly after all other customize hooks. See **customize-hooks** above.
     Additional cleanup hooks can be specified with **\--cleanup-hook**.
+
+**skip**
+:   list of stages to skip (string). mmdebstrap tries hard to implement
+    sensible defaults and will try to stop you before shooting yourself in the
+    foot. This option is for when you are sure you know what you are doing and
+    allows one to skip certain actions and safety checks. See section
+    **OPERATION** in mmdebstrap(1) for a list of possible arguments and their
+    context. Additional stages to skip can be specified with **\--skip**.
 
 **suite**
 :   String. The suite may be a valid release code name (eg, sid, stretch,

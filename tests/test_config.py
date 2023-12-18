@@ -57,7 +57,10 @@ class TestArguments(unittest.TestCase):
                 "--customize-hook=",
                 "--dpkgopt=",
                 "--essential-hook=",
+                "--extract-hook=",
+                "--hook-dir=",
                 "--keyring=",
+                "--skip=",
                 "--mirrors=",
                 "--packages=",
                 "--setup-hook=",
@@ -75,10 +78,13 @@ class TestArguments(unittest.TestCase):
                     "customize_hook",
                     "dpkgopt",
                     "essential_hook",
+                    "extract_hook",
+                    "hook_dir",
                     "keyring",
                     "mirrors",
                     "packages",
                     "setup_hook",
+                    "skip",
                 },
             ),
             {
@@ -90,10 +96,13 @@ class TestArguments(unittest.TestCase):
                 "customize_hook": [],
                 "dpkgopt": [],
                 "essential_hook": [],
+                "extract_hook": [],
+                "hook_dir": [],
                 "keyring": [],
                 "mirrors": [],
                 "packages": [],
                 "setup_hook": [],
+                "skip": [],
             },
         )
 
@@ -112,8 +121,10 @@ class TestArguments(unittest.TestCase):
                 "dpkgopt": None,
                 "env": {},
                 "essential_hook": None,
+                "extract_hook": None,
                 "force": False,
                 "format": None,
+                "hook_dir": None,
                 "hostname": None,
                 "install_recommends": False,
                 "keyring": None,
@@ -126,6 +137,7 @@ class TestArguments(unittest.TestCase):
                 "packages": None,
                 "setup_hook": None,
                 "simulate": False,
+                "skip": None,
                 "suite": None,
                 "target": None,
                 "tmpdir": None,
@@ -345,6 +357,52 @@ class TestConfig(unittest.TestCase):
             },
         )
 
+    def test_add_command_line_arguments_no_config(self):
+        """Test Config.add_command_line_arguments() with no config file."""
+        args = parse_args(
+            [
+                "--cleanup-hook",
+                'cp /dev/null "$1/etc/hostname"',
+                "--customize-hook",
+                'chroot "$1" apt-get update',
+                "--env",
+                "KEY=VALUE",
+                "--essential-hook",
+                "copy-in /etc/bash.bashrc /etc",
+                "--extract-hook",
+                'find "$1" -xtype l',
+                "--hostname",
+                "cobb",
+                "--install-recommends",
+                "--skip=check/signed-by",
+                "--hook-dir=/usr/share/mmdebstrap/hooks/eatmydata",
+                "--name",
+                "ubuntu-24.04",
+                "--setup-hook",
+                'echo root:x:0:0:root:/root:/bin/sh > "$1/etc/passwd"',
+            ]
+        )
+        config = Config()
+        config.add_command_line_arguments(args)
+        self.assertEqual(
+            config,
+            {
+                "env": {"KEY": "VALUE"},
+                "mmdebstrap": {
+                    "cleanup-hooks": ['cp /dev/null "$1/etc/hostname"'],
+                    "customize-hooks": ['chroot "$1" apt-get update'],
+                    "essential-hooks": ["copy-in /etc/bash.bashrc /etc"],
+                    "extract-hooks": ['find "$1" -xtype l'],
+                    "hook-dirs": ["/usr/share/mmdebstrap/hooks/eatmydata"],
+                    "hostname": "cobb",
+                    "install-recommends": True,
+                    "setup-hooks": ['echo root:x:0:0:root:/root:/bin/sh > "$1/etc/passwd"'],
+                    "skip": ["check/signed-by"],
+                },
+                "name": "ubuntu-24.04",
+            },
+        )
+
     @staticmethod
     def test_check_example():
         """Test example unstable.yaml file."""
@@ -390,6 +448,40 @@ class TestConfig(unittest.TestCase):
                     "variant": "minbase",
                 }
             },
+        )
+
+    def test_sanitize_packages_debs(self) -> None:
+        """Test sanitize_packages method: multiple local .debs"""
+        config = Config()
+        config["mmdebstrap"] = {"packages": ["/home/user/foo.deb", "/home/user/bar.deb"]}
+        config.sanitize_packages()
+        self.assertEqual(
+            config["mmdebstrap"]["packages"], ["/home/user/foo.deb", "/home/user/bar.deb"]
+        )
+
+    def test_sanitize_packages_duplicate_debs(self) -> None:
+        """Test sanitize_packages method: remove duplicate local .debs."""
+        config = Config()
+        config["mmdebstrap"] = {
+            "packages": ["./bdebstrap_0.5_all.deb", "../bdebstrap_0.4_all.deb"]
+        }
+        config.sanitize_packages()
+        self.assertEqual(config["mmdebstrap"]["packages"], ["../bdebstrap_0.4_all.deb"])
+
+    def test_sanitize_packages_duplicates(self) -> None:
+        """Test sanitize_packages method: remove duplicates."""
+        config = Config()
+        config["mmdebstrap"] = {"packages": ["less/jammy-updates", "more", "less=590-1build1"]}
+        config.sanitize_packages()
+        self.assertEqual(config["mmdebstrap"]["packages"], ["less=590-1build1", "more"])
+
+    def test_sanitize_packages_pattern(self) -> None:
+        """Test sanitize_packages method: APT pattern"""
+        config = Config()
+        config["mmdebstrap"] = {"packages": ["?priority(required)", "?priority(important)"]}
+        config.sanitize_packages()
+        self.assertEqual(
+            config["mmdebstrap"]["packages"], ["?priority(required)", "?priority(important)"]
         )
 
     def test_yaml_rendering(self):

@@ -23,6 +23,7 @@ import collections
 import io
 import logging
 import os
+import pathlib
 import re
 import shutil
 import subprocess
@@ -50,7 +51,9 @@ MMDEBSTRAP_OPTS = {
     "customize-hooks": list,
     "dpkgopts": list,
     "essential-hooks": list,
+    "extract-hooks": list,
     "format": str,
+    "hook-dirs": list,
     "hostname": str,
     "install-recommends": bool,
     "keyrings": list,
@@ -58,6 +61,7 @@ MMDEBSTRAP_OPTS = {
     "mode": str,
     "packages": list,
     "setup-hooks": list,
+    "skip": list,
     "suite": str,
     "target": str,
     "variant": str,
@@ -71,17 +75,20 @@ class Mmdebstrap:
         self.config = config
         self.logger = logging.getLogger(__script_name__)
 
+    def _get_mmdebstrap_log_level_parameters(self) -> list[str]:
+        log_level = self.logger.getEffectiveLevel()
+        if log_level >= logging.ERROR:
+            return ["-q"]
+        if log_level <= logging.DEBUG:
+            return ["--debug"]
+        if log_level <= logging.INFO:
+            return ["-v"]
+        return []
+
     def construct_parameters(self, output_dir, simulate=False):
         """Construct the parameter for mmdebstrap from a given dictionary."""
         # pylint: disable=too-many-branches
-        cmd = ["mmdebstrap"]
-        log_level = self.logger.getEffectiveLevel()
-        if log_level >= logging.ERROR:
-            cmd += ["-q"]
-        elif log_level <= logging.DEBUG:
-            cmd += ["--debug"]
-        elif log_level <= logging.INFO:
-            cmd += ["-v"]
+        cmd = ["mmdebstrap"] + self._get_mmdebstrap_log_level_parameters()
         if simulate:
             cmd += ["--simulate"]
         mmdebstrap = self.config.get("mmdebstrap", {})
@@ -104,8 +111,14 @@ class Mmdebstrap:
             cmd.append(f"--components={','.join(mmdebstrap['components'])}")
         if "architectures" in mmdebstrap:
             cmd.append(f"--architectures={','.join(mmdebstrap['architectures'])}")
+        if "skip" in mmdebstrap:
+            cmd.append(f"--skip={','.join(mmdebstrap['skip'])}")
+        if "hook-dirs" in mmdebstrap:
+            cmd += [f"--hook-dir={hook}" for hook in mmdebstrap["hook-dirs"]]
         if "setup-hooks" in mmdebstrap:
             cmd += [f"--setup-hook={hook}" for hook in mmdebstrap["setup-hooks"]]
+        if "extract-hooks" in mmdebstrap:
+            cmd += [f"--extract-hook={hook}" for hook in mmdebstrap["extract-hooks"]]
         cmd.append(f'--essential-hook=mkdir -p "$1{OUTPUT_DIR}"')
         if "essential-hooks" in mmdebstrap:
             cmd += [f"--essential-hook={hook}" for hook in mmdebstrap["essential-hooks"]]
@@ -296,7 +309,6 @@ def parse_args(args):  # pylint: disable=too-many-statements
             "unshare",
             "fakeroot",
             "fakechroot",
-            "proot",
             "chrootless",
         ],
         help=(
@@ -364,6 +376,15 @@ def parse_args(args):  # pylint: disable=too-many-statements
         ),
     )
     parser.add_argument(
+        "--extract-hook",
+        metavar="COMMAND",
+        action="append",
+        help=(
+            "Execute arbitrary COMMAND after the Essential:yes packages have been extracted "
+            "but before installing them."
+        ),
+    )
+    parser.add_argument(
         "--essential-hook",
         metavar="COMMAND",
         action="append",
@@ -386,6 +407,19 @@ def parse_args(args):  # pylint: disable=too-many-statements
         metavar="COMMAND",
         action="append",
         help="Execute arbitrary COMMAND after all customize hooks have been executed.",
+    )
+    parser.add_argument(
+        "--hook-dir",
+        metavar="DIRECTORY",
+        action="append",
+        help='Execute scripts in DIRECTORY with filenames starting with "setup", "extract",'
+        ' "essential" or "customize", at the respective stages during an mmdebstrap run.',
+    )
+    parser.add_argument(
+        "--skip",
+        metavar="STAGE",
+        action="append",
+        help="Comma or whitespace separated list of actions and safety checks to skip.",
     )
 
     # Positional arguments from mmdebstrap
@@ -482,10 +516,13 @@ def parse_args(args):  # pylint: disable=too-many-statements
     args.config = sanitize_list(args.config)
     args.dpkgopt = sanitize_list(args.dpkgopt)
     args.keyring = sanitize_list(args.keyring)
+    args.hook_dir = sanitize_list(args.hook_dir)
     args.setup_hook = sanitize_list(args.setup_hook)
+    args.extract_hook = sanitize_list(args.extract_hook)
     args.essential_hook = sanitize_list(args.essential_hook)
     args.customize_hook = sanitize_list(args.customize_hook)
     args.cleanup_hook = sanitize_list(args.cleanup_hook)
+    args.skip = sanitize_list(args.skip)
 
     return args
 
@@ -584,14 +621,20 @@ class Config(dict):
             self._append_mmdebstrap_option("components", args.components)
         if args.architectures:
             self._append_mmdebstrap_option("architectures", args.architectures)
+        if args.hook_dir:
+            self._append_mmdebstrap_option("hook-dirs", args.hook_dir)
         if args.setup_hook:
             self._append_mmdebstrap_option("setup-hooks", args.setup_hook)
         if args.essential_hook:
             self._append_mmdebstrap_option("essential-hooks", args.essential_hook)
+        if args.extract_hook:
+            self._append_mmdebstrap_option("extract-hooks", args.extract_hook)
         if args.customize_hook:
             self._append_mmdebstrap_option("customize-hooks", args.customize_hook)
         if args.cleanup_hook:
             self._append_mmdebstrap_option("cleanup-hooks", args.cleanup_hook)
+        if args.skip:
+            self._append_mmdebstrap_option("skip", args.skip)
         if args.suite:
             self._set_mmdebstrap_option("suite", args.suite)
         if args.target:
@@ -661,7 +704,7 @@ class Config(dict):
 
         dict_merge(self, config)
 
-    def sanitize_packages(self):
+    def sanitize_packages(self) -> None:
         """Sanitize packages list by removing duplicates (keeping the latest one)."""
         if "mmdebstrap" not in self or "packages" not in self["mmdebstrap"]:
             return
@@ -671,16 +714,17 @@ class Config(dict):
             if not package:
                 # Cover commented out and empty entries
                 continue
-            if "=" in package:
-                name, version = package.split("=", 1)
-                packages[name] = "=" + version
-            elif "/" in package:
-                name, version = package.split("/", 1)
-                packages[name] = "/" + version
+            if package[0] in ("?", "!", "~", "("):
+                # Do not fiddle with APT patterns
+                packages[package] = package
+            elif package.startswith("/") or package.startswith("./") or package.startswith("../"):
+                name = pathlib.Path(package).stem.split("_", 1)[0]
+                packages[name] = package
             else:
-                packages[package] = ""
+                name = re.split("[=/]", package, maxsplit=1)[0]
+                packages[name] = package
 
-        self["mmdebstrap"]["packages"] = [k + v for k, v in packages.items()]
+        self["mmdebstrap"]["packages"] = list(packages.values())
 
     def save(self, config_filename, simulate=False):
         """Save configuration to given config filename."""
