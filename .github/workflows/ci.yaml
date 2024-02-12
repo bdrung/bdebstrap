@@ -27,11 +27,22 @@ jobs:
         run: >
           apt-get update &&
           apt-get install --no-install-recommends --yes
-          pandoc python3 python3-ruamel.yaml python3-setuptools
+          pandoc python3 python3-coverage python3-ruamel.yaml python3-setuptools
       - name: Run build
-        run: python3 setup.py build
+        run: python3 -m coverage run --branch setup.py build
       - name: Run install
-        run: python3 setup.py install
+        run: python3 -m coverage run -a --branch setup.py install
+      - name: Coverage report
+        run: python3 -m coverage xml
+      - name: Install dependencies for Codecov
+        run: >
+          apt-get install --no-install-recommends --yes
+          ca-certificates curl git
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          fail_ci_if_error: true
+          files: ./coverage.xml
 
   unittest:
     runs-on: ubuntu-latest
