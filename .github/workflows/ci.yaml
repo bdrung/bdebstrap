@@ -15,6 +15,7 @@ jobs:
           - debian:bullseye-slim
           - debian:bookworm-slim
           - debian:testing-slim
+          - debian:unstable-slim
           - ubuntu:jammy
           - ubuntu:mantic
     container:
