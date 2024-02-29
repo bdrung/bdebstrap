@@ -56,7 +56,7 @@ class BuildCommand(distutils.command.build.build):
 
     def run(self):
         self.run_command("doc")
-        distutils.command.build.build.run(self)
+        super().run()
 
 
 class CleanCommand(distutils.command.clean.clean):
@@ -67,7 +67,7 @@ class CleanCommand(distutils.command.clean.clean):
             if os.path.exists(man_page):
                 self.announce(f"removing {man_page}", level=distutils.log.INFO)
                 os.remove(man_page)
-        distutils.command.clean.clean.run(self)
+        super().run()
 
 
 if __name__ == "__main__":
