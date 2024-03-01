@@ -12,6 +12,7 @@ Test-Command: ./system-testing bdebstrap
 Depends: debian-archive-keyring,
          diffoscope-minimal,
          distro-info-data,
+         dpkg-dev,
          squashfs-tools-ng,
          ubuntu-keyring,
          @
