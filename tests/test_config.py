@@ -19,6 +19,7 @@ import io
 import logging
 import os
 import tempfile
+import typing
 import unittest
 import unittest.mock
 
@@ -28,7 +29,7 @@ EXAMPLE_CONFIG_DIR = os.path.join(os.path.dirname(__file__), "..", "examples")
 TEST_CONFIG_DIR = os.path.join(os.path.dirname(__file__), "configs")
 
 
-def get_subset(dict_, keys):
+def get_subset(dict_: typing.Any, keys: set[str]) -> dict[str, typing.Any]:
     """Return a dictionary that only contains the items for the given keys."""
     return {key: value for key, value in dict_.items() if key in keys}
 
@@ -40,12 +41,12 @@ class TestArguments(unittest.TestCase):
 
     maxDiff = None
 
-    def test_debug(self):
+    def test_debug(self) -> None:
         """Test --debug argument parsing."""
         args = parse_args(["--debug"])
         self.assertEqual(args.log_level, logging.DEBUG)
 
-    def test_empty_args(self):
+    def test_empty_args(self) -> None:
         """Test setting arguments to empty strings."""
         args = parse_args(
             [
@@ -106,7 +107,7 @@ class TestArguments(unittest.TestCase):
             },
         )
 
-    def test_no_args(self):
+    def test_no_args(self) -> None:
         """Test calling bdebstrap without arguments."""
         args = parse_args([])
         self.assertEqual(
@@ -145,19 +146,19 @@ class TestArguments(unittest.TestCase):
             },
         )
 
-    def test_parse_env(self):
+    def test_parse_env(self) -> None:
         """Test parsing --env parameters."""
         args = parse_args(["-e", "KEY=VALUE", "--env", "FOO=bar"])
         self.assertEqual(args.env, {"FOO": "bar", "KEY": "VALUE"})
 
-    def test_malformed_env(self):
+    def test_malformed_env(self) -> None:
         """Test malformed --env parameter (missing equal sign)."""
         stderr = io.StringIO()
         with contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit):
             parse_args(["--env", "invalid"])
         self.assertIn("Failed to parse --env 'invalid'.", stderr.getvalue())
 
-    def test_mirrors_with_spaces(self):
+    def test_mirrors_with_spaces(self) -> None:
         """Test --mirrors with leading/trailing spaces."""
         args = parse_args(
             [
@@ -177,7 +178,7 @@ class TestArguments(unittest.TestCase):
             ],
         )
 
-    def test_optional_args(self):
+    def test_optional_args(self) -> None:
         """Test optional arguments (which also have positional ones)."""
         args = parse_args(
             [
@@ -205,7 +206,7 @@ class TestArguments(unittest.TestCase):
             },
         )
 
-    def test_positional_args(self):
+    def test_positional_args(self) -> None:
         """Test positional arguments (overwriting optional ones)."""
         args = parse_args(
             [
@@ -234,7 +235,7 @@ class TestArguments(unittest.TestCase):
             },
         )
 
-    def test_split(self):
+    def test_split(self) -> None:
         """Test splitting comma and space separated values."""
         args = parse_args(
             [
@@ -271,7 +272,7 @@ class TestConfig(unittest.TestCase):
 
     maxDiff = None
 
-    def test_add_command_line_arguments(self):
+    def test_add_command_line_arguments(self) -> None:
         """Test Config.add_command_line_arguments()."""
         args = parse_args(
             [
@@ -297,7 +298,7 @@ class TestConfig(unittest.TestCase):
             },
         )
 
-    def test_config_and_arguments(self):
+    def test_config_and_arguments(self) -> None:
         """Test Config.add_command_line_arguments() with config file and arguments."""
         args = parse_args(
             [
@@ -357,7 +358,7 @@ class TestConfig(unittest.TestCase):
             },
         )
 
-    def test_add_command_line_arguments_no_config(self):
+    def test_add_command_line_arguments_no_config(self) -> None:
         """Test Config.add_command_line_arguments() with no config file."""
         args = parse_args(
             [
@@ -404,7 +405,7 @@ class TestConfig(unittest.TestCase):
         )
 
     @staticmethod
-    def test_check_example():
+    def test_check_example() -> None:
         """Test example unstable.yaml file."""
         config = Config()
         config.load(os.path.join(EXAMPLE_CONFIG_DIR, "Debian-unstable.yaml"))
@@ -412,14 +413,14 @@ class TestConfig(unittest.TestCase):
         config.check()
 
     @staticmethod
-    def test_commented_packages():
+    def test_commented_packages() -> None:
         """Test commented-packages.yaml file."""
         config = Config()
         config.load(os.path.join(TEST_CONFIG_DIR, "commented-packages.yaml"))
         config.sanitize_packages()
         config.check()
 
-    def test_env_items(self):
+    def test_env_items(self) -> None:
         """Test environment variables for example unstable.yaml."""
         config = Config()
         config.load(os.path.join(EXAMPLE_CONFIG_DIR, "Debian-unstable.yaml"))
@@ -433,7 +434,7 @@ class TestConfig(unittest.TestCase):
             ],
         )
 
-    def test_loading(self):
+    def test_loading(self) -> None:
         """Test loading a YAML configuration file."""
         config = Config()
         config.load(os.path.join(EXAMPLE_CONFIG_DIR, "Debian-unstable.yaml"))
@@ -484,7 +485,7 @@ class TestConfig(unittest.TestCase):
             config["mmdebstrap"]["packages"], ["?priority(required)", "?priority(important)"]
         )
 
-    def test_yaml_rendering(self):
+    def test_yaml_rendering(self) -> None:
         """Test that config.yaml is formatted correctly."""
         config = Config()
         config_filename = os.path.join(EXAMPLE_CONFIG_DIR, "Debian-unstable.yaml")
@@ -497,7 +498,7 @@ class TestConfig(unittest.TestCase):
             input_config = config_file.read()
         self.assertEqual(output_config, input_config)
 
-    def test_source_date_epoch(self):
+    def test_source_date_epoch(self) -> None:
         """Test getting and setting SOURCE_DATE_EPOCH."""
         config = Config()
         self.assertIsNone(config.source_date_epoch)
@@ -505,7 +506,7 @@ class TestConfig(unittest.TestCase):
             config.set_source_date_epoch()
         self.assertEqual(config.source_date_epoch, 1581694618)
 
-    def test_wrong_element_type(self):
+    def test_wrong_element_type(self) -> None:
         """Test error message for wrong list element type."""
         config = Config()
         config.load(os.path.join(TEST_CONFIG_DIR, "wrong-element-type.yaml"))
@@ -516,13 +517,13 @@ class TestConfig(unittest.TestCase):
 class TestDictMerge(unittest.TestCase):
     """Unittests for dict_merge function."""
 
-    def test_merge_lists(self):
+    def test_merge_lists(self) -> None:
         """Test merging nested dicts."""
         items = {"A": ["A1", "A2", "A3"], "C": 4}
         dict_merge(items, {"A": ["A4", "A5"]})
         self.assertEqual(items, {"A": ["A1", "A2", "A3", "A4", "A5"], "C": 4})
 
-    def test_merge_nested_dicts(self):
+    def test_merge_nested_dicts(self) -> None:
         """Test merging nested dicts."""
         items = {"A": {"A1": 0, "A4": 4}, "C": 4}
         dict_merge(items, {"A": {"A1": 1, "A5": 5}})

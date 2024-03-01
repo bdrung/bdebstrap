@@ -18,6 +18,7 @@ import logging
 import os
 import unittest
 import unittest.mock
+from unittest.mock import MagicMock
 
 from bdebstrap import Config, Mmdebstrap, __script_name__
 
@@ -29,10 +30,10 @@ class TestMmdebstrap(unittest.TestCase):
 
     maxDiff = None
 
-    def setUp(self):
+    def setUp(self) -> None:
         logging.getLogger(__script_name__).setLevel(logging.WARNING)
 
-    def test_debian_example(self):
+    def test_debian_example(self) -> None:
         """Test Mmdebstrap with Debian unstable config."""
         mmdebstrap = Mmdebstrap(
             Config(
@@ -66,7 +67,7 @@ class TestMmdebstrap(unittest.TestCase):
             ],
         )
 
-    def test_dry_run(self):
+    def test_dry_run(self) -> None:
         """Test Mmdebstrap with dry run set."""
         mmdebstrap = Mmdebstrap(
             Config(mmdebstrap={"suite": "unstable", "target": "example.tar.xz"})
@@ -86,7 +87,7 @@ class TestMmdebstrap(unittest.TestCase):
             ],
         )
 
-    def test_hooks(self):
+    def test_hooks(self) -> None:
         """Test Mmdebstrap with custom hooks."""
         mmdebstrap = Mmdebstrap(
             Config(
@@ -123,7 +124,7 @@ class TestMmdebstrap(unittest.TestCase):
             ],
         )
 
-    def test_extra_opts(self):
+    def test_extra_opts(self) -> None:
         """Test Mmdebstrap with extra options."""
         mmdebstrap = Mmdebstrap(
             Config(
@@ -165,7 +166,7 @@ class TestMmdebstrap(unittest.TestCase):
     @unittest.mock.patch("os.path.exists", unittest.mock.MagicMock(return_value=True))
     @unittest.mock.patch("os.stat")
     @unittest.mock.patch("os.utime")
-    def test_clamp_mtime(self, utime_mock, stat_mock):
+    def test_clamp_mtime(self, utime_mock: MagicMock, stat_mock: MagicMock) -> None:
         """Test clamping mtime of output files/directories."""
         stat_mock.return_value = os.stat_result(
             (33261, 16535979, 64769, 1, 1000, 1000, 17081, 1581451059, 1581451059, 1581451059)
@@ -180,7 +181,7 @@ class TestMmdebstrap(unittest.TestCase):
     @unittest.mock.patch("os.path.exists", unittest.mock.MagicMock(return_value=True))
     @unittest.mock.patch("os.stat")
     @unittest.mock.patch("os.utime")
-    def test_clamp_mtime_permission(self, utime_mock, stat_mock):
+    def test_clamp_mtime_permission(self, utime_mock: MagicMock, stat_mock: MagicMock) -> None:
         """Test permission error when clamping mtime of output files/directories."""
         stat_mock.return_value = os.stat_result(
             (33261, 16535979, 64769, 1, 1000, 1000, 17081, 1581451059, 1581451059, 1581451059)
@@ -205,7 +206,7 @@ class TestMmdebstrap(unittest.TestCase):
                 context_manager.output,
             )
 
-    def test_log_level_debug(self):
+    def test_log_level_debug(self) -> None:
         """Test Mmdebstrap with log level debug."""
         logging.getLogger(__script_name__).setLevel(logging.DEBUG)
         mmdebstrap = Mmdebstrap(Config())
@@ -213,19 +214,19 @@ class TestMmdebstrap(unittest.TestCase):
             mmdebstrap.construct_parameters("/output")[0:2], ["mmdebstrap", "--debug"]
         )
 
-    def test_log_level_error(self):
+    def test_log_level_error(self) -> None:
         """Test Mmdebstrap with log level error."""
         logging.getLogger(__script_name__).setLevel(logging.ERROR)
         mmdebstrap = Mmdebstrap(Config())
         self.assertEqual(mmdebstrap.construct_parameters("/output")[0:2], ["mmdebstrap", "-q"])
 
-    def test_log_level_info(self):
+    def test_log_level_info(self) -> None:
         """Test Mmdebstrap with log level info."""
         logging.getLogger(__script_name__).setLevel(logging.INFO)
         mmdebstrap = Mmdebstrap(Config())
         self.assertEqual(mmdebstrap.construct_parameters("/output")[0:2], ["mmdebstrap", "-v"])
 
-    def test_log_level_warning(self):
+    def test_log_level_warning(self) -> None:
         """Test Mmdebstrap with log level warning."""
         logging.getLogger(__script_name__).setLevel(logging.WARNING)
         mmdebstrap = Mmdebstrap(Config())

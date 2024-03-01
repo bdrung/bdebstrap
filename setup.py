@@ -35,15 +35,15 @@ class DocCommand(Command):
     """A custom command to build the documentation using pandoc."""
 
     description = "run pandoc to generate man pages"
-    user_options = []
+    user_options: list[tuple[str, str, str]] = []
 
-    def initialize_options(self):
+    def initialize_options(self) -> None:
         """Set default values for options."""
 
-    def finalize_options(self):
+    def finalize_options(self) -> None:
         """Post-process options."""
 
-    def run(self):
+    def run(self) -> None:
         """Run pandoc."""
         for man_page in MAN_PAGES:
             command = ["pandoc", "-s", "-t", "man", man_page + ".md", "-o", man_page]
@@ -54,7 +54,7 @@ class DocCommand(Command):
 class BuildCommand(distutils.command.build.build):
     """Custom build command (calling doc beforehand)."""
 
-    def run(self):
+    def run(self) -> None:
         self.run_command("doc")
         super().run()
 
@@ -62,7 +62,7 @@ class BuildCommand(distutils.command.build.build):
 class CleanCommand(distutils.command.clean.clean):
     """Custom clean command (removing generated man pages)."""
 
-    def run(self):
+    def run(self) -> None:
         for man_page in MAN_PAGES:
             if os.path.exists(man_page):
                 self.announce(f"removing {man_page}", level=distutils.log.INFO)
