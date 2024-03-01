@@ -298,15 +298,7 @@ def parse_args(args):  # pylint: disable=too-many-statements
     )
     parser.add_argument(
         "--mode",
-        choices=[
-            "auto",
-            "sudo",
-            "root",
-            "unshare",
-            "fakeroot",
-            "fakechroot",
-            "chrootless",
-        ],
+        choices=["auto", "sudo", "root", "unshare", "fakeroot", "fakechroot", "chrootless"],
         help=(
             "Choose how to perform the chroot operation and create a filesystem with "
             "ownership information different from the current user."
