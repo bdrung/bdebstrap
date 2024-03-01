@@ -25,7 +25,6 @@ from setuptools import Command, setup
 # Setuptools replaces the `distutils` module in `sys.modules`.
 # pylint: disable=wrong-import-order
 import distutils.command.build  # isort:skip, pylint: disable=deprecated-module
-import distutils.command.clean  # isort:skip, pylint: disable=deprecated-module
 
 HOOKS = ["hooks/disable-units", "hooks/enable-units"]
 MAN_PAGES = ["bdebstrap.1"]
@@ -61,16 +60,27 @@ class BuildCommand(distutils.command.build.build):
         super().run()
 
 
-class CleanCommand(distutils.command.clean.clean):
+class CleanCommand(Command):
     """Custom clean command (removing generated man pages)."""
 
+    description = "remove generated man pages"
+    user_options = [("all", "a", "remove all build output, not just temporary by-products")]
+    boolean_options = ["all"]
+
+    def initialize_options(self) -> None:
+        """Set default values for options."""
+
+    def finalize_options(self) -> None:
+        """Post-process options."""
+
+    # pylint: disable-next=no-self-use
     def run(self) -> None:
+        """Clean build artefacts from doc command."""
         logger = logging.getLogger(__name__)
         for man_page in MAN_PAGES:
             if os.path.exists(man_page):
                 logger.info("removing %s", man_page)
                 os.remove(man_page)
-        super().run()
 
 
 if __name__ == "__main__":
