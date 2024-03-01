@@ -1,3 +1,12 @@
+bdebstrap (0.6.1-1) unstable; urgency=medium
+
+  * New upstream release.
+  * d/t/control: add dpkg-dev dependency to fix missing dpkg-architecture
+    error in './system-testing bdebstrap' autopktest. Thanks: Vladimir Petko
+  * Update year in copyright
+
+ -- Benjamin Drung <bdrung@debian.org>  Fri, 01 Mar 2024 02:57:19 +0100
+
 bdebstrap (0.6.0-1) unstable; urgency=medium
 
   * New upstream release.
