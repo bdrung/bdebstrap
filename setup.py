@@ -16,16 +16,17 @@
 
 """Setup for bdebstrap"""
 
+import logging
 import os
 import subprocess
 
 from setuptools import Command, setup
 
-# Setuptools replaces the `distutils` module in `sys.modules`.
-# pylint: disable=wrong-import-order
-import distutils.log  # isort:skip, pylint: disable=deprecated-module
-import distutils.command.build  # isort:skip, pylint: disable=deprecated-module
-import distutils.command.clean  # isort:skip, pylint: disable=deprecated-module
+try:
+    from setuptools.command.build import build
+except ImportError:
+    # Fallback for setuptools < 60 and Python < 3.12
+    from distutils.command.build import build  # pylint: disable=deprecated-module
 
 HOOKS = ["hooks/disable-units", "hooks/enable-units"]
 MAN_PAGES = ["bdebstrap.1"]
@@ -35,39 +36,53 @@ class DocCommand(Command):
     """A custom command to build the documentation using pandoc."""
 
     description = "run pandoc to generate man pages"
-    user_options = []
+    user_options: list[tuple[str, str, str]] = []
 
-    def initialize_options(self):
+    def initialize_options(self) -> None:
         """Set default values for options."""
 
-    def finalize_options(self):
+    def finalize_options(self) -> None:
         """Post-process options."""
 
-    def run(self):
+    # pylint: disable-next=no-self-use
+    def run(self) -> None:
         """Run pandoc."""
+        logger = logging.getLogger(__name__)
         for man_page in MAN_PAGES:
             command = ["pandoc", "-s", "-t", "man", man_page + ".md", "-o", man_page]
-            self.announce(f"running command: {' '.join(command)}", level=distutils.log.INFO)
+            logger.info("running command: %s", " ".join(command))
             subprocess.check_call(command)
 
 
-class BuildCommand(distutils.command.build.build):
+class BuildCommand(build):
     """Custom build command (calling doc beforehand)."""
 
-    def run(self):
+    def run(self) -> None:
         self.run_command("doc")
-        distutils.command.build.build.run(self)
+        super().run()
 
 
-class CleanCommand(distutils.command.clean.clean):
+class CleanCommand(Command):
     """Custom clean command (removing generated man pages)."""
 
-    def run(self):
+    description = "remove generated man pages"
+    user_options = [("all", "a", "remove all build output, not just temporary by-products")]
+    boolean_options = ["all"]
+
+    def initialize_options(self) -> None:
+        """Set default values for options."""
+
+    def finalize_options(self) -> None:
+        """Post-process options."""
+
+    # pylint: disable-next=no-self-use
+    def run(self) -> None:
+        """Clean build artefacts from doc command."""
+        logger = logging.getLogger(__name__)
         for man_page in MAN_PAGES:
             if os.path.exists(man_page):
-                self.announce(f"removing {man_page}", level=distutils.log.INFO)
+                logger.info("removing %s", man_page)
                 os.remove(man_page)
-        distutils.command.clean.clean.run(self)
 
 
 if __name__ == "__main__":
@@ -76,7 +91,7 @@ if __name__ == "__main__":
 
     setup(
         name="bdebstrap",
-        version="0.6.0",
+        version="0.6.1",
         description="Benjamin's multi-mirror Debian chroot creation tool",
         long_description=LONG_DESCRIPTION,
         long_description_content_type="text/markdown",

@@ -29,14 +29,11 @@ import shutil
 import subprocess
 import sys
 import time
+import typing
 
 import ruamel.yaml
 
-HOOKS_DIR = (
-    "/usr/share/bdebstrap/hooks"
-    if os.path.dirname(__file__) == "/usr/bin"
-    else os.path.join(os.path.dirname(__file__), "hooks")
-)
+HOOKS_DIR = pathlib.Path(__file__).parent.parent / "share" / "bdebstrap" / "hooks"
 MANIFEST_FILENAME = "manifest"
 OUTPUT_DIR = "/tmp/bdebstrap-output"
 LOG_FORMAT = "%(asctime)s %(name)s %(levelname)s: %(message)s"
@@ -68,10 +65,208 @@ MMDEBSTRAP_OPTS = {
 }
 
 
+class Config(dict):
+    """YAML configuration for bdebstrap."""
+
+    _ENV_PREFIX = "BDEBSTRAP_"
+    _KEYS = {"env", "mmdebstrap", "name"}
+
+    def __init__(self, *args: typing.Any, **kwargs: dict[str, typing.Any]) -> None:
+        super().__init__(self, *args, **kwargs)
+        self.logger = logging.getLogger(__script_name__)
+        self.yaml = ruamel.yaml.YAML()
+        self.yaml.explicit_start = True
+        self.yaml.indent(offset=2, sequence=4)
+
+    def _set_mmdebstrap_option(self, option: str, value: str | int | list[str]) -> None:
+        """Set the given mmdebstrap option (overwriting existing values)."""
+        if "mmdebstrap" not in self:
+            self["mmdebstrap"] = {}
+        self["mmdebstrap"][option] = value
+
+    def _append_mmdebstrap_option(self, option: str, value: str | int | list[str]) -> None:
+        """Append the given mmdebstrap option to the list of values."""
+        if "mmdebstrap" not in self:
+            self["mmdebstrap"] = {}
+        if option in self["mmdebstrap"]:
+            self["mmdebstrap"][option] += value
+        else:
+            self["mmdebstrap"][option] = value
+
+    # pylint: disable-next=too-many-branches
+    def add_command_line_arguments(self, args: argparse.Namespace) -> None:
+        """Add/Override configs from the given command line arguments."""
+        for config_filename in args.config:
+            self.load(config_filename)
+
+        if args.env:
+            if "env" not in self:
+                self["env"] = {}
+            for key, value in args.env.items():
+                self["env"][key] = value
+        if args.name:
+            self["name"] = args.name
+
+        if args.variant:
+            self._set_mmdebstrap_option("variant", args.variant)
+        if args.mode:
+            self._set_mmdebstrap_option("mode", args.mode)
+        if args.format:
+            self._set_mmdebstrap_option("format", args.format)
+        if args.aptopt:
+            self._append_mmdebstrap_option("aptopts", args.aptopt)
+        if args.keyring:
+            self._append_mmdebstrap_option("keyrings", args.keyring)
+        if args.dpkgopt:
+            self._append_mmdebstrap_option("dpkgopts", args.dpkgopt)
+        if args.hostname:
+            self._set_mmdebstrap_option("hostname", args.hostname)
+        if args.install_recommends:
+            self._set_mmdebstrap_option("install-recommends", args.install_recommends)
+        if args.packages:
+            self._append_mmdebstrap_option("packages", args.packages)
+        if args.components:
+            self._append_mmdebstrap_option("components", args.components)
+        if args.architectures:
+            self._append_mmdebstrap_option("architectures", args.architectures)
+        if args.hook_dir:
+            self._append_mmdebstrap_option("hook-dirs", args.hook_dir)
+        if args.setup_hook:
+            self._append_mmdebstrap_option("setup-hooks", args.setup_hook)
+        if args.essential_hook:
+            self._append_mmdebstrap_option("essential-hooks", args.essential_hook)
+        if args.extract_hook:
+            self._append_mmdebstrap_option("extract-hooks", args.extract_hook)
+        if args.customize_hook:
+            self._append_mmdebstrap_option("customize-hooks", args.customize_hook)
+        if args.cleanup_hook:
+            self._append_mmdebstrap_option("cleanup-hooks", args.cleanup_hook)
+        if args.skip:
+            self._append_mmdebstrap_option("skip", args.skip)
+        if args.suite:
+            self._set_mmdebstrap_option("suite", args.suite)
+        if args.target:
+            self._set_mmdebstrap_option("target", args.target)
+        if args.mirrors:
+            self._append_mmdebstrap_option("mirrors", args.mirrors)
+
+    def env_items(self) -> list[tuple[str, str]]:
+        """Return key-value pair of environment variables."""
+        return sorted(
+            list(self.get("env", {}).items())
+            + [
+                (self._ENV_PREFIX + "HOOKS", HOOKS_DIR),
+                (self._ENV_PREFIX + "NAME", self["name"]),
+                (self._ENV_PREFIX + "OUTPUT_DIR", OUTPUT_DIR),
+            ]
+        )
+
+    def check(self) -> None:
+        """Check the format of the configuration."""
+        unknown_top_level_keys = sorted(k for k in self.keys() if k not in self._KEYS)
+        if unknown_top_level_keys:
+            self.logger.warning(
+                "Ignoring unknown top level keys: %s", ", ".join(unknown_top_level_keys)
+            )
+
+        if "mmdebstrap" in self:
+            for key, value in self["mmdebstrap"].items():
+                if key not in MMDEBSTRAP_OPTS:
+                    self.logger.warning("Ignoring unknown mmdebstrap option '%s'.", key)
+                    continue
+                if not isinstance(value, MMDEBSTRAP_OPTS[key]):
+                    raise ValueError(
+                        f"Unexpected type '{type(value)}' for mmdebstrap option '{key}'. "
+                        f"Excepted: {MMDEBSTRAP_OPTS[key]}."
+                    )
+                if MMDEBSTRAP_OPTS[key] is list:
+                    assert isinstance(value, list)
+                    # Check if list elements are strings
+                    for element in value:
+                        if not isinstance(element, str):
+                            raise ValueError(
+                                f"Following list element of mmdebstrap option '{key}' has type "
+                                f"'{type(element).__name__}' instead of string: {element}"
+                            )
+        else:
+            self.logger.warning("The configuration does not contain a 'mmdebstrap' entry.")
+
+        if "name" not in self:
+            raise ValueError("The configuration does not contain a 'name' entry.")
+
+    def load(self, config_filename: str) -> None:
+        """Loading configuration from given config file."""
+        self.logger.info("Loading configuration from '%s'...", config_filename)
+        try:
+            with open(config_filename, "rb") as config_file:
+                config = self.yaml.load(config_file)
+        except OSError as error:
+            self.logger.error(
+                "Failed to open configuration '%s': %s", config_filename, error.args[1]
+            )
+            raise
+
+        if "mmdebstrap" in config and "include" in config["mmdebstrap"]:
+            mmdebstrap = config["mmdebstrap"]
+            mmdebstrap["packages"] = mmdebstrap["include"] + mmdebstrap.get("packages", [])
+            del mmdebstrap["include"]
+
+        dict_merge(self, config)
+
+    def sanitize_packages(self) -> None:
+        """Sanitize packages list by removing duplicates (keeping the latest one)."""
+        if "mmdebstrap" not in self or "packages" not in self["mmdebstrap"]:
+            return
+
+        packages = collections.OrderedDict()
+        for package in self["mmdebstrap"]["packages"]:
+            if not package:
+                # Cover commented out and empty entries
+                continue
+            if package[0] in {"?", "!", "~", "("}:
+                # Do not fiddle with APT patterns
+                packages[package] = package
+            elif package.startswith("/") or package.startswith("./") or package.startswith("../"):
+                name = pathlib.Path(package).stem.split("_", 1)[0]
+                packages[name] = package
+            else:
+                name = re.split("[=/]", package, maxsplit=1)[0]
+                packages[name] = package
+
+        self["mmdebstrap"]["packages"] = list(packages.values())
+
+    def save(self, config_filename: str, simulate: bool = False) -> None:
+        """Save configuration to given config filename."""
+        self.logger.info(
+            "%s configuration to '%s'.",
+            "Simulate saving" if simulate else "Saving",
+            config_filename,
+        )
+        if simulate:
+            self.yaml.dump(dict(self), io.StringIO())
+        else:
+            with open(config_filename, "w", encoding="utf-8") as config_file:
+                self.yaml.dump(dict(self), config_file)
+            clamp_mtime(config_filename, self.source_date_epoch)
+
+    @property
+    def source_date_epoch(self) -> typing.Any:
+        """Return SOURCE_DATE_EPOCH (for reproducible builds)."""
+        return self.get("env", {}).get("SOURCE_DATE_EPOCH")
+
+    def set_source_date_epoch(self) -> None:
+        """Set SOURCE_DATE_EPOCH (for reproducible builds) if not already set."""
+
+        if "env" not in self:
+            self["env"] = {}
+        if self["env"].get("SOURCE_DATE_EPOCH") is None:
+            self["env"]["SOURCE_DATE_EPOCH"] = int(time.time())
+
+
 class Mmdebstrap:
     """Wrapper around calling mmdebstrap."""
 
-    def __init__(self, config):
+    def __init__(self, config: Config) -> None:
         self.config = config
         self.logger = logging.getLogger(__script_name__)
 
@@ -85,7 +280,7 @@ class Mmdebstrap:
             return ["-v"]
         return []
 
-    def construct_parameters(self, output_dir, simulate=False):
+    def construct_parameters(self, output_dir: str, simulate: bool = False) -> list[str]:
         """Construct the parameter for mmdebstrap from a given dictionary."""
         # pylint: disable=too-many-branches
         cmd = ["mmdebstrap"] + self._get_mmdebstrap_log_level_parameters()
@@ -147,14 +342,14 @@ class Mmdebstrap:
 
         return cmd
 
-    def call(self, output_dir, simulate=False):
+    def call(self, output_dir: str, simulate: bool = False) -> None:
         """Call mmdebstrap."""
         cmd = self.construct_parameters(output_dir, simulate)
         self.logger.info("Calling %s", escape_cmd(cmd))
         subprocess.check_call(cmd)
         self.clamp_mtime(output_dir)
 
-    def clamp_mtime(self, output_dir):
+    def clamp_mtime(self, output_dir: str) -> None:
         """Clamp the modification time of the manifest, target, and output directory."""
         for path in (
             os.path.join(output_dir, "manifest"),
@@ -170,7 +365,7 @@ class Mmdebstrap:
                     )
 
 
-def clamp_mtime(path, source_date_epoch):
+def clamp_mtime(path: str, source_date_epoch: int | str | None) -> None:
     """Clamp the modification time for the given path to SOURCE_DATE_EPOCH."""
     if not source_date_epoch:
         return
@@ -179,7 +374,7 @@ def clamp_mtime(path, source_date_epoch):
         os.utime(path, (int(source_date_epoch), int(source_date_epoch)))
 
 
-def duration_str(duration):
+def duration_str(duration: float) -> str:
     """Return duration in the biggest useful time unit (hours, minutes, seconds)."""
     if duration < 60:
         return f"{duration:.3f} seconds"
@@ -190,11 +385,11 @@ def duration_str(duration):
     return f"{minutes // 60} h {minutes % 60} min {duration % 60:.3f} s (= {duration:.3f} s)"
 
 
-def escape_cmd(cmd):
+def escape_cmd(cmd: list[str]) -> str:
     """Escape command line arguments for printing/logging."""
     unsafe_re = re.compile(r"[^\w@%+=:,./-]", re.ASCII)
 
-    def quote(cmd_argv):
+    def quote(cmd_argv: str) -> str:
         """Return a shell-escaped version of the string *cmd_argv*."""
         if unsafe_re.search(cmd_argv) is None:
             return cmd_argv
@@ -207,14 +402,15 @@ def escape_cmd(cmd):
     return " ".join(quote(x) for x in cmd)
 
 
-def sanitize_list(list_):
+def sanitize_list(list_: list[str]) -> list[str]:
     """Sanitize given list by removing all empty entries."""
     if list_ is None:
         return None
     return [x for x in list_ if x]
 
 
-def parse_args(args):  # pylint: disable=too-many-statements
+# pylint: disable-next=too-many-statements
+def parse_args(argv: list[str]) -> argparse.Namespace:
     """Parse the given command line arguments."""
     parser = argparse.ArgumentParser(description=__doc__)
     # parser.add_argument("-m", "--manifest", help="Store packages manifest in given file")
@@ -302,15 +498,7 @@ def parse_args(args):  # pylint: disable=too-many-statements
     )
     parser.add_argument(
         "--mode",
-        choices=[
-            "auto",
-            "sudo",
-            "root",
-            "unshare",
-            "fakeroot",
-            "fakechroot",
-            "chrootless",
-        ],
+        choices=["auto", "sudo", "root", "unshare", "fakeroot", "fakechroot", "chrootless"],
         help=(
             "Choose how to perform the chroot operation and create a filesystem with "
             "ownership information different from the current user."
@@ -475,7 +663,7 @@ def parse_args(args):  # pylint: disable=too-many-statements
         ),
     )
 
-    args = parser.parse_args(args)
+    args = parser.parse_args(argv)
 
     env_dict = {}
     for env in args.env:
@@ -527,7 +715,7 @@ def parse_args(args):  # pylint: disable=too-many-statements
     return args
 
 
-def dict_merge(this, other):
+def dict_merge(this: dict[str, typing.Any], other: dict[str, typing.Any]) -> None:
     """
     Update this dictionary with the key/value pairs from other, merging existing keys.
     Return ``None``.
@@ -539,7 +727,6 @@ def dict_merge(this, other):
 
     :param this: dictionary onto which the merge is executed
     :param other: dictionary merged into ``this``
-    :return: None
     """
     for key in other.keys():
         if (
@@ -558,203 +745,7 @@ def dict_merge(this, other):
             this[key] = other[key]
 
 
-class Config(dict):
-    """YAML configuration for bdebstrap."""
-
-    _ENV_PREFIX = "BDEBSTRAP_"
-    _KEYS = {"env", "mmdebstrap", "name"}
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
-        self.logger = logging.getLogger(__script_name__)
-        self.yaml = ruamel.yaml.YAML()
-        self.yaml.explicit_start = True
-        self.yaml.indent(offset=2, sequence=4)
-
-    def _set_mmdebstrap_option(self, option, value):
-        """Set the given mmdebstrap option (overwriting existing values)."""
-        if "mmdebstrap" not in self:
-            self["mmdebstrap"] = {}
-        self["mmdebstrap"][option] = value
-
-    def _append_mmdebstrap_option(self, option, value):
-        """Append the given mmdebstrap option to the list of values."""
-        if "mmdebstrap" not in self:
-            self["mmdebstrap"] = {}
-        if option in self["mmdebstrap"]:
-            self["mmdebstrap"][option] += value
-        else:
-            self["mmdebstrap"][option] = value
-
-    def add_command_line_arguments(self, args):  # pylint: disable=too-many-branches
-        """Add/Override configs from the given command line arguments."""
-        for config_filename in args.config:
-            self.load(config_filename)
-
-        if args.env:
-            if "env" not in self:
-                self["env"] = {}
-            for key, value in args.env.items():
-                self["env"][key] = value
-        if args.name:
-            self["name"] = args.name
-
-        if args.variant:
-            self._set_mmdebstrap_option("variant", args.variant)
-        if args.mode:
-            self._set_mmdebstrap_option("mode", args.mode)
-        if args.format:
-            self._set_mmdebstrap_option("format", args.format)
-        if args.aptopt:
-            self._append_mmdebstrap_option("aptopts", args.aptopt)
-        if args.keyring:
-            self._append_mmdebstrap_option("keyrings", args.keyring)
-        if args.dpkgopt:
-            self._append_mmdebstrap_option("dpkgopts", args.dpkgopt)
-        if args.hostname:
-            self._set_mmdebstrap_option("hostname", args.hostname)
-        if args.install_recommends:
-            self._set_mmdebstrap_option("install-recommends", args.install_recommends)
-        if args.packages:
-            self._append_mmdebstrap_option("packages", args.packages)
-        if args.components:
-            self._append_mmdebstrap_option("components", args.components)
-        if args.architectures:
-            self._append_mmdebstrap_option("architectures", args.architectures)
-        if args.hook_dir:
-            self._append_mmdebstrap_option("hook-dirs", args.hook_dir)
-        if args.setup_hook:
-            self._append_mmdebstrap_option("setup-hooks", args.setup_hook)
-        if args.essential_hook:
-            self._append_mmdebstrap_option("essential-hooks", args.essential_hook)
-        if args.extract_hook:
-            self._append_mmdebstrap_option("extract-hooks", args.extract_hook)
-        if args.customize_hook:
-            self._append_mmdebstrap_option("customize-hooks", args.customize_hook)
-        if args.cleanup_hook:
-            self._append_mmdebstrap_option("cleanup-hooks", args.cleanup_hook)
-        if args.skip:
-            self._append_mmdebstrap_option("skip", args.skip)
-        if args.suite:
-            self._set_mmdebstrap_option("suite", args.suite)
-        if args.target:
-            self._set_mmdebstrap_option("target", args.target)
-        if args.mirrors:
-            self._append_mmdebstrap_option("mirrors", args.mirrors)
-
-    def env_items(self):
-        """Return key-value pair of environment variables."""
-        return sorted(
-            list(self.get("env", {}).items())
-            + [
-                (self._ENV_PREFIX + "HOOKS", HOOKS_DIR),
-                (self._ENV_PREFIX + "NAME", self["name"]),
-                (self._ENV_PREFIX + "OUTPUT_DIR", OUTPUT_DIR),
-            ]
-        )
-
-    def check(self):
-        """Check the format of the configuration."""
-        unknown_top_level_keys = sorted(k for k in self.keys() if k not in self._KEYS)
-        if unknown_top_level_keys:
-            self.logger.warning(
-                "Ignoring unknown top level keys: %s", ", ".join(unknown_top_level_keys)
-            )
-
-        if "mmdebstrap" in self:
-            for key, value in self["mmdebstrap"].items():
-                if key not in MMDEBSTRAP_OPTS:
-                    self.logger.warning("Ignoring unknown mmdebstrap option '%s'.", key)
-                    continue
-                if not isinstance(value, MMDEBSTRAP_OPTS[key]):
-                    raise ValueError(
-                        f"Unexpected type '{type(value)}' for mmdebstrap option '{key}'. "
-                        f"Excepted: {MMDEBSTRAP_OPTS[key]}."
-                    )
-                if MMDEBSTRAP_OPTS[key] is list:
-                    # Check if list elements are strings
-                    for element in value:
-                        if not isinstance(element, str):
-                            raise ValueError(
-                                f"Following list element of mmdebstrap option '{key}' has type "
-                                f"'{type(element).__name__}' instead of string: {element}"
-                            )
-        else:
-            self.logger.warning("The configuration does not contain a 'mmdebstrap' entry.")
-
-        if "name" not in self:
-            raise ValueError("The configuration does not contain a 'name' entry.")
-
-    def load(self, config_filename):
-        """Loading configuration from given config file."""
-        self.logger.info("Loading configuration from '%s'...", config_filename)
-        try:
-            with open(config_filename, "rb") as config_file:
-                config = self.yaml.load(config_file)
-        except OSError as error:
-            self.logger.error(
-                "Failed to open configuration '%s': %s", config_filename, error.args[1]
-            )
-            raise
-
-        if "mmdebstrap" in config and "include" in config["mmdebstrap"]:
-            mmdebstrap = config["mmdebstrap"]
-            mmdebstrap["packages"] = mmdebstrap["include"] + mmdebstrap.get("packages", [])
-            del mmdebstrap["include"]
-
-        dict_merge(self, config)
-
-    def sanitize_packages(self) -> None:
-        """Sanitize packages list by removing duplicates (keeping the latest one)."""
-        if "mmdebstrap" not in self or "packages" not in self["mmdebstrap"]:
-            return
-
-        packages = collections.OrderedDict()
-        for package in self["mmdebstrap"]["packages"]:
-            if not package:
-                # Cover commented out and empty entries
-                continue
-            if package[0] in ("?", "!", "~", "("):
-                # Do not fiddle with APT patterns
-                packages[package] = package
-            elif package.startswith("/") or package.startswith("./") or package.startswith("../"):
-                name = pathlib.Path(package).stem.split("_", 1)[0]
-                packages[name] = package
-            else:
-                name = re.split("[=/]", package, maxsplit=1)[0]
-                packages[name] = package
-
-        self["mmdebstrap"]["packages"] = list(packages.values())
-
-    def save(self, config_filename, simulate=False):
-        """Save configuration to given config filename."""
-        self.logger.info(
-            "%s configuration to '%s'.",
-            "Simulate saving" if simulate else "Saving",
-            config_filename,
-        )
-        if simulate:
-            self.yaml.dump(dict(self), io.StringIO())
-        else:
-            with open(config_filename, "w", encoding="utf-8") as config_file:
-                self.yaml.dump(dict(self), config_file)
-            clamp_mtime(config_filename, self.source_date_epoch)
-
-    @property
-    def source_date_epoch(self):
-        """Return SOURCE_DATE_EPOCH (for reproducible builds)."""
-        return self.get("env", {}).get("SOURCE_DATE_EPOCH")
-
-    def set_source_date_epoch(self):
-        """Set SOURCE_DATE_EPOCH (for reproducible builds) if not already set."""
-
-        if "env" not in self:
-            self["env"] = {}
-        if self["env"].get("SOURCE_DATE_EPOCH") is None:
-            self["env"]["SOURCE_DATE_EPOCH"] = int(time.time())
-
-
-def prepare_output_dir(output_dir, force, simulate=False):
+def prepare_output_dir(output_dir: str, force: bool, simulate: bool = False) -> bool:
     """Ensure that the output directory exists and is empty."""
     logger = logging.getLogger(__script_name__)
 
@@ -792,7 +783,7 @@ def prepare_output_dir(output_dir, force, simulate=False):
     return True
 
 
-def main(argv):
+def main(argv: list[str]) -> int:
     """Call mmdebstrap with parameters specified in a YAML file."""
     start_time = time.time()
     args = parse_args(argv)
@@ -844,7 +835,7 @@ def main(argv):
         )
         return 1
 
-    if mmdebstrap.get("target") in (None, "-"):
+    if mmdebstrap.get("target") in {None, "-"}:
         logger.info("Build successful and sent uncompressed tarball to standard output.")
     else:
         logger.info("Build successful in '%s'.", mmdebstrap["target"])

@@ -18,6 +18,7 @@ import os
 import tempfile
 import unittest
 import unittest.mock
+from unittest.mock import MagicMock
 
 from bdebstrap import clamp_mtime, duration_str, escape_cmd, prepare_output_dir
 
@@ -30,7 +31,7 @@ class TestClampMtime(unittest.TestCase):
     @staticmethod
     @unittest.mock.patch("os.stat")
     @unittest.mock.patch("os.utime")
-    def test_clamp(utime_mock, stat_mock):
+    def test_clamp(utime_mock: MagicMock, stat_mock: MagicMock) -> None:
         """Test clamping the modification time."""
         stat_mock.return_value = os.stat_result(
             (33261, 16535979, 64769, 1, 1000, 1000, 17081, 1581451059, 1581451059, 1581451059)
@@ -41,7 +42,7 @@ class TestClampMtime(unittest.TestCase):
     @staticmethod
     @unittest.mock.patch("os.stat")
     @unittest.mock.patch("os.utime")
-    def test_not_clamping(utime_mock, stat_mock):
+    def test_not_clamping(utime_mock: MagicMock, stat_mock: MagicMock) -> None:
         """Test not clamping the modification time."""
         stat_mock.return_value = os.stat_result(
             (33261, 16535979, 64769, 1, 1000, 1000, 17081, 1581451059, 1581451059, 1581451059)
@@ -51,7 +52,7 @@ class TestClampMtime(unittest.TestCase):
 
     @staticmethod
     @unittest.mock.patch("os.stat")
-    def test_no_source_date_epoch(stat_mock):
+    def test_no_source_date_epoch(stat_mock: MagicMock) -> None:
         """Test doing nothing if SOURCE_DATE_EPOCH is not set."""
         clamp_mtime("/example", None)
         stat_mock.assert_not_called()
@@ -62,15 +63,15 @@ class TestDuration(unittest.TestCase):
     This unittest class tests the duration_str function.
     """
 
-    def test_seconds(self):
+    def test_seconds(self) -> None:
         """Test calling duration_str(3.606104612350464)."""
         self.assertEqual(duration_str(3.606104612350464), "3.606 seconds")
 
-    def test_minutes(self):
+    def test_minutes(self) -> None:
         """Test calling duration_str(421.88086652755737)."""
         self.assertEqual(duration_str(421.88086652755737), "7 min 1.881 s (= 421.881 s)")
 
-    def test_hours(self):
+    def test_hours(self) -> None:
         """Test calling duration_str(7397.447488069534)."""
         self.assertEqual(duration_str(7397.447488069534), "2 h 3 min 17.447 s (= 7397.447 s)")
 
@@ -80,22 +81,22 @@ class TestEscapeCmd(unittest.TestCase):
     This unittest class tests the escape_cmd function.
     """
 
-    def test_simple(self):
+    def test_simple(self) -> None:
         """Test calling escape_cmd(["free"])."""
         self.assertEqual(escape_cmd(["free"]), "free")
 
-    def test_spaces(self):
+    def test_spaces(self) -> None:
         """Test calling escape_cmd(["scp", "source", "a space"])."""
         self.assertEqual(escape_cmd(["scp", "source", "a space"]), 'scp source "a space"')
 
-    def test_escape(self):
+    def test_escape(self) -> None:
         """Test calling escape_cmd(["dpkg-query", r"-f=${Package}\t${Version}\n", "-W"])."""
         self.assertEqual(
             escape_cmd(["dpkg-query", r"-f=${Package}\t${Version}\n", "-W"]),
             r'dpkg-query "-f=\${Package}\t\${Version}\n" -W',
         )
 
-    def test_customize_hook(self):
+    def test_customize_hook(self) -> None:
         """Test calling escape_cmd on mmdebstrap customize hook."""
         self.assertEqual(
             escape_cmd(
@@ -118,14 +119,14 @@ class TestPrepareOutputDir(unittest.TestCase):
 
     TMP_PREFIX = "bdebstrap-"
 
-    def test_dry_run(self):
+    def test_dry_run(self) -> None:
         """Test that dry run does not create the directory."""
         with tempfile.TemporaryDirectory(prefix=self.TMP_PREFIX) as tmpdir:
             output_dir = os.path.join(tmpdir, "unstable")
             self.assertTrue(prepare_output_dir(output_dir, False, simulate=True))
             self.assertFalse(os.path.isdir(output_dir))
 
-    def test_force(self):
+    def test_force(self) -> None:
         """Test replacing an existing output directory."""
         with tempfile.TemporaryDirectory(prefix=self.TMP_PREFIX) as tmpdir:
             output_dir = os.path.join(tmpdir, "unstable")
@@ -136,7 +137,7 @@ class TestPrepareOutputDir(unittest.TestCase):
             self.assertTrue(os.path.isdir(output_dir))
             self.assertEqual(os.listdir(output_dir), [])
 
-    def test_existing(self):
+    def test_existing(self) -> None:
         """Test failure when output directory already exists."""
         with tempfile.TemporaryDirectory(prefix=self.TMP_PREFIX) as tmpdir:
             output_dir = os.path.join(tmpdir, "unstable")
@@ -149,7 +150,7 @@ class TestPrepareOutputDir(unittest.TestCase):
             self.assertTrue(os.path.isdir(output_dir))
             self.assertEqual(os.listdir(output_dir), ["root.tar"])
 
-    def test_missing_output_dir(self):
+    def test_missing_output_dir(self) -> None:
         """Test creating the missing output directory."""
         with tempfile.TemporaryDirectory(prefix=self.TMP_PREFIX) as tmpdir:
             output_dir = os.path.join(tmpdir, "unstable")
