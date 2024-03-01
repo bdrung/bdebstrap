@@ -22,9 +22,11 @@ import subprocess
 
 from setuptools import Command, setup
 
-# Setuptools replaces the `distutils` module in `sys.modules`.
-# pylint: disable=wrong-import-order
-import distutils.command.build  # isort:skip, pylint: disable=deprecated-module
+try:
+    from setuptools.command.build import build
+except ImportError:
+    # Fallback for setuptools < 60 and Python < 3.12
+    from distutils.command.build import build  # pylint: disable=deprecated-module
 
 HOOKS = ["hooks/disable-units", "hooks/enable-units"]
 MAN_PAGES = ["bdebstrap.1"]
@@ -52,7 +54,7 @@ class DocCommand(Command):
             subprocess.check_call(command)
 
 
-class BuildCommand(distutils.command.build.build):
+class BuildCommand(build):
     """Custom build command (calling doc beforehand)."""
 
     def run(self) -> None:
