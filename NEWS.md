@@ -1,3 +1,12 @@
+bdebstrap 0.6.1 (2024-03-01)
+============================
+
+* fix: use relative path for hooks directory
+  ([bug #10](https://github.com/bdrung/bdebstrap/issues/10))
+* Add type hints
+* Support removed `distutils` in Python 3.12
+  ([bug #12](https://github.com/bdrung/bdebstrap/issues/12))
+
 bdebstrap 0.6.0 (2023-12-18)
 ============================
 
