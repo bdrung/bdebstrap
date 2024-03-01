@@ -16,6 +16,7 @@
 
 """Setup for bdebstrap"""
 
+import logging
 import os
 import subprocess
 
@@ -23,7 +24,6 @@ from setuptools import Command, setup
 
 # Setuptools replaces the `distutils` module in `sys.modules`.
 # pylint: disable=wrong-import-order
-import distutils.log  # isort:skip, pylint: disable=deprecated-module
 import distutils.command.build  # isort:skip, pylint: disable=deprecated-module
 import distutils.command.clean  # isort:skip, pylint: disable=deprecated-module
 
@@ -43,11 +43,13 @@ class DocCommand(Command):
     def finalize_options(self) -> None:
         """Post-process options."""
 
+    # pylint: disable-next=no-self-use
     def run(self) -> None:
         """Run pandoc."""
+        logger = logging.getLogger(__name__)
         for man_page in MAN_PAGES:
             command = ["pandoc", "-s", "-t", "man", man_page + ".md", "-o", man_page]
-            self.announce(f"running command: {' '.join(command)}", level=distutils.log.INFO)
+            logger.info("running command: %s", " ".join(command))
             subprocess.check_call(command)
 
 
@@ -63,9 +65,10 @@ class CleanCommand(distutils.command.clean.clean):
     """Custom clean command (removing generated man pages)."""
 
     def run(self) -> None:
+        logger = logging.getLogger(__name__)
         for man_page in MAN_PAGES:
             if os.path.exists(man_page):
-                self.announce(f"removing {man_page}", level=distutils.log.INFO)
+                logger.info("removing %s", man_page)
                 os.remove(man_page)
         super().run()
 
