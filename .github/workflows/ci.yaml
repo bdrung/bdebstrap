@@ -12,7 +12,6 @@ jobs:
       fail-fast: false
       matrix:
         container:
-          - debian:bullseye-slim
           - debian:bookworm-slim
           - debian:testing-slim
           - debian:unstable-slim
@@ -52,7 +51,6 @@ jobs:
       fail-fast: false
       matrix:
         container:
-          - debian:bullseye-slim
           - debian:bookworm-slim
           - debian:testing-slim
           - debian:unstable-slim
