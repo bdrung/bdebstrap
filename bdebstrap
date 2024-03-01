@@ -702,7 +702,7 @@ class Config(dict):
             if not package:
                 # Cover commented out and empty entries
                 continue
-            if package[0] in ("?", "!", "~", "("):
+            if package[0] in {"?", "!", "~", "("}:
                 # Do not fiddle with APT patterns
                 packages[package] = package
             elif package.startswith("/") or package.startswith("./") or package.startswith("../"):
@@ -832,7 +832,7 @@ def main(argv):
         )
         return 1
 
-    if mmdebstrap.get("target") in (None, "-"):
+    if mmdebstrap.get("target") in {None, "-"}:
         logger.info("Build successful and sent uncompressed tarball to standard output.")
     else:
         logger.info("Build successful in '%s'.", mmdebstrap["target"])
