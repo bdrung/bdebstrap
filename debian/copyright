@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 
 Files: *
-Copyright: 2017-2020 Benjamin Drung <bdrung@posteo.de>
+Copyright: 2017-2024 Benjamin Drung <bdrung@posteo.de>
 License: MIT
 
 Files: tests/test_pylint.py
