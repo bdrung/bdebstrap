@@ -486,7 +486,7 @@ class TestConfig(unittest.TestCase):
         )
 
     def test_yaml_rendering(self) -> None:
-        """Test that config.yaml is formatted correctly."""
+        """Test that config.yaml is a syntactically valid yaml file."""
         config = Config()
         config_filename = os.path.join(EXAMPLE_CONFIG_DIR, "Debian-unstable.yaml")
         config.load(config_filename)
@@ -497,6 +497,16 @@ class TestConfig(unittest.TestCase):
         with open(config_filename, encoding="utf-8") as config_file:
             input_config = config_file.read()
         self.assertEqual(output_config, input_config)
+
+    def test_yaml_flow_style(self) -> None:
+        """Test that config.yaml follows the correct flow style."""
+        config = Config()
+        config["mmdebstrap"] = {"packages": ["1", "2", "3", "4", "5"]}
+        with tempfile.NamedTemporaryFile() as temp_file:
+            config.save(temp_file.name)
+            with open(temp_file.name, encoding="utf-8") as config_file:
+                lines = len(config_file.readlines())
+        self.assertEqual(lines, 8)
 
     def test_source_date_epoch(self) -> None:
         """Test getting and setting SOURCE_DATE_EPOCH."""
