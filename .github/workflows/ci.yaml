@@ -25,11 +25,15 @@ jobs:
       image: ${{ matrix.container }}
       options: --privileged
     steps:
+      - name: Sanitize container name (for artifact name)
+        run: |
+          container=$(echo "${{ matrix.container }}" | sed 's/:/-/')
+          echo "JOB=${GITHUB_JOB}-${container}" >> "$GITHUB_ENV"
       - name: Install dependencies
         run: >
           apt-get update &&
-          apt-get install --no-install-recommends --yes ca-certificates git
-          pandoc python3 python3-coverage python3-ruamel.yaml python3-setuptools
+          apt-get install --no-install-recommends --yes pandoc python3
+          python3-coverage python3-ruamel.yaml python3-setuptools
       - uses: actions/checkout@v4
       - name: Run build
         run: python3 -m coverage run --branch setup.py build
@@ -39,14 +43,11 @@ jobs:
         run: python3 -m coverage run -a --branch setup.py clean
       - name: Coverage report
         run: python3 -m coverage xml
-      - name: Install dependencies for Codecov
-        run: apt-get install --no-install-recommends --yes curl gpg gpg-agent
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
         with:
-          fail_ci_if_error: true
-          files: ./coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
+          name: coverage-${{ env.JOB }}
+          path: ./coverage.xml
 
   unittest:
     runs-on: ubuntu-latest
@@ -63,25 +64,25 @@ jobs:
     container:
       image: ${{ matrix.container }}
     steps:
+      - name: Sanitize container name (for artifact name)
+        run: |
+          container=$(echo "${{ matrix.container }}" | sed 's/:/-/')
+          echo "JOB=${GITHUB_JOB}-${container}" >> "$GITHUB_ENV"
       - name: Install dependencies
         run: >
           apt-get update &&
-          apt-get install --no-install-recommends --yes black ca-certificates
-          git isort pylint python3 python3-coverage python3-flake8
-          python3-ruamel.yaml shellcheck
+          apt-get install --no-install-recommends --yes black isort pylint
+          python3 python3-coverage python3-flake8 python3-ruamel.yaml shellcheck
       - uses: actions/checkout@v4
       - name: Run unit tests
         run: |
           python3 -m coverage run -m unittest discover -v
           python3 -m coverage xml
-      - name: Install dependencies for Codecov
-        run: apt-get install --no-install-recommends --yes curl gpg gpg-agent
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
         with:
-          fail_ci_if_error: true
-          files: ./coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
+          name: coverage-${{ env.JOB }}
+          path: ./coverage.xml
 
   skip-linters:
     runs-on: ubuntu-latest
@@ -98,24 +99,25 @@ jobs:
     container:
       image: ${{ matrix.container }}
     steps:
+      - name: Sanitize container name (for artifact name)
+        run: |
+          container=$(echo "${{ matrix.container }}" | sed 's/:/-/')
+          echo "JOB=${GITHUB_JOB}-${container}" >> "$GITHUB_ENV"
       - name: Install dependencies
         run: >
           apt-get update &&
-          apt-get install --no-install-recommends --yes ca-certificates git
-          pylint python3 python3-coverage python3-ruamel.yaml
+          apt-get install --no-install-recommends --yes pylint python3
+          python3-coverage python3-ruamel.yaml
       - uses: actions/checkout@v4
       - name: Run unit tests
         run: |
           SKIP_LINTERS=1 python3 -m coverage run -m unittest discover -v
           python3 -m coverage xml
-      - name: Install dependencies for Codecov
-        run: apt-get install --no-install-recommends --yes curl gpg gpg-agent
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
         with:
-          fail_ci_if_error: true
-          files: ./coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
+          name: coverage-${{ env.JOB }}
+          path: ./coverage.xml
 
   system-testing:
     runs-on: ubuntu-latest
@@ -157,3 +159,20 @@ jobs:
       - name: Run yamllint
         run: |
           yamllint .
+
+  upload-to-codecov:
+    if: ${{ always() }}
+    needs:
+      - install
+      - unittest
+      - skip-linters
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
