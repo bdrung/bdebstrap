@@ -26,7 +26,8 @@ try:
     from setuptools.command.build import build
 except ImportError:
     # Fallback for setuptools < 60 and Python < 3.12
-    from distutils.command.build import build  # pylint: disable=deprecated-module
+    # pylint: disable-next=deprecated-module
+    from distutils.command.build import build  # type: ignore
 
 HOOKS = ["hooks/disable-units", "hooks/enable-units"]
 MAN_PAGES = ["bdebstrap.1"]
@@ -54,10 +55,12 @@ class DocCommand(Command):
             subprocess.check_call(command)
 
 
+# pylint: disable-next=too-few-public-methods
 class BuildCommand(build):
     """Custom build command (calling doc beforehand)."""
 
     def run(self) -> None:
+        """Execute the build command."""
         self.run_command("doc")
         super().run()
 
@@ -91,7 +94,7 @@ if __name__ == "__main__":
 
     setup(
         name="bdebstrap",
-        version="0.6.1",
+        version="0.7.0",
         description="Benjamin's multi-mirror Debian chroot creation tool",
         long_description=LONG_DESCRIPTION,
         long_description_content_type="text/markdown",

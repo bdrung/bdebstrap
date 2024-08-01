@@ -65,7 +65,7 @@ MMDEBSTRAP_OPTS = {
 }
 
 
-class Config(dict):
+class Config(dict[str, typing.Any]):
     """YAML configuration for bdebstrap."""
 
     _ENV_PREFIX = "BDEBSTRAP_"
@@ -75,6 +75,7 @@ class Config(dict):
         super().__init__(self, *args, **kwargs)
         self.logger = logging.getLogger(__script_name__)
         self.yaml = ruamel.yaml.YAML()
+        self.yaml.default_flow_style = False
         self.yaml.explicit_start = True
         self.yaml.indent(offset=2, sequence=4)
 

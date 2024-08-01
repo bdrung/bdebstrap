@@ -24,7 +24,7 @@ from bdebstrap import OUTPUT_DIR, main
 EXAMPLE_CONFIG_DIR = os.path.join(os.path.dirname(__file__), "..", "examples")
 
 
-def default_hooks(output_dir):
+def default_hooks(output_dir: str) -> list[str]:
     """Return the list of default hooks."""
     return [
         f'--essential-hook=mkdir -p "$1{OUTPUT_DIR}"',
@@ -43,7 +43,12 @@ class TestMain(unittest.TestCase):
     @unittest.mock.patch("bdebstrap.Config.save")
     @unittest.mock.patch("bdebstrap.prepare_output_dir")
     @unittest.mock.patch("bdebstrap.Mmdebstrap.call")
-    def test_debian_example(self, mmdebstrap_call_mock, prepare_output_dir_mock, config_save_mock):
+    def test_debian_example(
+        self,
+        mmdebstrap_call_mock: unittest.mock.MagicMock,
+        prepare_output_dir_mock: unittest.mock.MagicMock,
+        config_save_mock: unittest.mock.MagicMock,
+    ) -> None:
         """Test Debian unstable example."""
         args = [
             "-c",
@@ -62,8 +67,11 @@ class TestMain(unittest.TestCase):
     @unittest.mock.patch("bdebstrap.prepare_output_dir")
     @unittest.mock.patch("bdebstrap.Mmdebstrap.call")
     def test_failed_mmdebstrap(
-        self, mmdebstrap_call_mock, prepare_output_dir_mock, config_save_mock
-    ):
+        self,
+        mmdebstrap_call_mock: unittest.mock.MagicMock,
+        prepare_output_dir_mock: unittest.mock.MagicMock,
+        config_save_mock: unittest.mock.MagicMock,
+    ) -> None:
         """Test failure of mmdebstrap call."""
         mmdebstrap_call_mock.side_effect = subprocess.CalledProcessError(42, "mmdebstrap")
         args = ["-c", os.path.join(EXAMPLE_CONFIG_DIR, "Debian-unstable.yaml"), "--name", "foobar"]
@@ -80,7 +88,12 @@ class TestMain(unittest.TestCase):
     @unittest.mock.patch("bdebstrap.Config.save")
     @unittest.mock.patch("bdebstrap.prepare_output_dir")
     @unittest.mock.patch("bdebstrap.Mmdebstrap.call")
-    def test_empty_target(self, mmdebstrap_call_mock, prepare_output_dir_mock, config_save_mock):
+    def test_empty_target(
+        self,
+        mmdebstrap_call_mock: unittest.mock.MagicMock,
+        prepare_output_dir_mock: unittest.mock.MagicMock,
+        config_save_mock: unittest.mock.MagicMock,
+    ) -> None:
         """Test keeping target empty."""
         with self.assertLogs("bdebstrap", level="INFO"):
             self.assertEqual(main(["--name", "empty-target", "unstable"]), 0)
@@ -91,7 +104,12 @@ class TestMain(unittest.TestCase):
     @unittest.mock.patch("bdebstrap.Config.save")
     @unittest.mock.patch("bdebstrap.prepare_output_dir")
     @unittest.mock.patch("subprocess.check_call")
-    def test_minus_target(self, check_call_mock, prepare_output_dir_mock, config_save_mock):
+    def test_minus_target(
+        self,
+        check_call_mock: unittest.mock.MagicMock,
+        prepare_output_dir_mock: unittest.mock.MagicMock,
+        config_save_mock: unittest.mock.MagicMock,
+    ) -> None:
         """Test --target=-."""
         with self.assertLogs("bdebstrap", level="INFO"):
             self.assertEqual(main(["--target=-", "--name", "minus-target", "unstable"]), 0)

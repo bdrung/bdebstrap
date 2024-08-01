@@ -14,6 +14,7 @@
 
 """Run black code formatter in check mode."""
 
+import os
 import subprocess
 import sys
 import unittest
@@ -28,18 +29,15 @@ class BlackTestCase(unittest.TestCase):
     source files is provided by the get_source_files() function.
     """
 
-    def test_black(self):
+    @unittest.skipIf(os.environ.get("SKIP_LINTERS"), "requested via SKIP_LINTERS env variable")
+    def test_black(self) -> None:
         """Test: Run black code formatter on Python source code."""
-
-        cmd = ["black", "--check", "--diff", "-l", "99"] + get_source_files()
+        cmd = ["black", "--check", "--diff"] + get_source_files()
         if unittest_verbosity() >= 2:
             sys.stderr.write(f"Running following command:\n{' '.join(cmd)}\n")
-        with subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True
-        ) as process:
-            output = process.communicate()[0].decode()
+        process = subprocess.run(cmd, capture_output=True, check=False, text=True)
 
         if process.returncode == 1:  # pragma: no cover
-            self.fail(f"black found code that needs reformatting:\n{output.strip()}")
+            self.fail(f"black found code that needs reformatting:\n{process.stdout.strip()}")
         if process.returncode != 0:  # pragma: no cover
-            self.fail(f"black exited with code {process.returncode}:\n{output.strip()}")
+            self.fail(f"black exited with code {process.returncode}:\n{process.stdout.strip()}")

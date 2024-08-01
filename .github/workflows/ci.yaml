@@ -5,6 +5,9 @@ on:  # yamllint disable-line rule:truthy
   - push
   - pull_request
 
+# Note: ca-certificates and git are needed for actions/checkout to use git
+# which is needed for codecov/codecov-action.
+
 jobs:
   install:
     runs-on: ubuntu-latest
@@ -16,17 +19,22 @@ jobs:
           - debian:testing-slim
           - debian:unstable-slim
           - ubuntu:jammy
-          - ubuntu:mantic
+          - ubuntu:noble
+          - ubuntu:oracular
     container:
       image: ${{ matrix.container }}
       options: --privileged
     steps:
-      - uses: actions/checkout@v4
+      - name: Sanitize container name (for artifact name)
+        run: |
+          container=$(echo "${{ matrix.container }}" | sed 's/:/-/')
+          echo "JOB=${GITHUB_JOB}-${container}" >> "$GITHUB_ENV"
       - name: Install dependencies
         run: >
           apt-get update &&
-          apt-get install --no-install-recommends --yes
-          pandoc python3 python3-coverage python3-ruamel.yaml python3-setuptools
+          apt-get install --no-install-recommends --yes pandoc python3
+          python3-coverage python3-ruamel.yaml python3-setuptools
+      - uses: actions/checkout@v4
       - name: Run build
         run: python3 -m coverage run --branch setup.py build
       - name: Run install
@@ -35,15 +43,11 @@ jobs:
         run: python3 -m coverage run -a --branch setup.py clean
       - name: Coverage report
         run: python3 -m coverage xml
-      - name: Install dependencies for Codecov
-        run: >
-          apt-get install --no-install-recommends --yes
-          ca-certificates curl git
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
         with:
-          fail_ci_if_error: true
-          files: ./coverage.xml
+          name: coverage-${{ env.JOB }}
+          path: ./coverage.xml
 
   unittest:
     runs-on: ubuntu-latest
@@ -55,30 +59,67 @@ jobs:
           - debian:testing-slim
           - debian:unstable-slim
           - ubuntu:jammy
-          - ubuntu:mantic
+          - ubuntu:noble
+          - ubuntu:oracular
     container:
       image: ${{ matrix.container }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Sanitize container name (for artifact name)
+        run: |
+          container=$(echo "${{ matrix.container }}" | sed 's/:/-/')
+          echo "JOB=${GITHUB_JOB}-${container}" >> "$GITHUB_ENV"
       - name: Install dependencies
         run: >
           apt-get update &&
-          apt-get install --no-install-recommends --yes black isort pylint
+          apt-get install --no-install-recommends --yes black isort mypy pylint
           python3 python3-coverage python3-flake8 python3-ruamel.yaml
-          shellcheck
+          python3-setuptools python3-typeshed shellcheck
+      - uses: actions/checkout@v4
       - name: Run unit tests
         run: |
           python3 -m coverage run -m unittest discover -v
           python3 -m coverage xml
-      - name: Install dependencies for Codecov
-        run: >
-          apt-get install --no-install-recommends --yes
-          ca-certificates curl git
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
         with:
-          fail_ci_if_error: true
-          files: ./coverage.xml
+          name: coverage-${{ env.JOB }}
+          path: ./coverage.xml
+
+  skip-linters:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        container:
+          - debian:bookworm-slim
+          - debian:testing-slim
+          - debian:unstable-slim
+          - ubuntu:jammy
+          - ubuntu:noble
+          - ubuntu:oracular
+    container:
+      image: ${{ matrix.container }}
+    steps:
+      - name: Sanitize container name (for artifact name)
+        run: |
+          container=$(echo "${{ matrix.container }}" | sed 's/:/-/')
+          echo "JOB=${GITHUB_JOB}-${container}" >> "$GITHUB_ENV"
+      - name: Install dependencies
+        run: >
+          apt-get update &&
+          apt-get install --no-install-recommends --yes mypy pylint python3
+          python3-coverage python3-ruamel.yaml python3-setuptools
+          python3-typeshed
+      - uses: actions/checkout@v4
+      - name: Run unit tests
+        run: |
+          SKIP_LINTERS=1 python3 -m coverage run -m unittest discover -v
+          python3 -m coverage xml
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ env.JOB }}
+          path: ./coverage.xml
 
   system-testing:
     runs-on: ubuntu-latest
@@ -86,10 +127,11 @@ jobs:
       fail-fast: false
       matrix:
         container:
-          # - debian:testing-slim  # missing ubuntu-keyring
+          - debian:testing-slim
           - debian:unstable-slim
           - ubuntu:jammy
-          - ubuntu:mantic
+          - ubuntu:noble
+          - ubuntu:oracular
     container:
       image: ${{ matrix.container }}
       options: --privileged
@@ -119,3 +161,20 @@ jobs:
       - name: Run yamllint
         run: |
           yamllint .
+
+  upload-to-codecov:
+    if: ${{ always() }}
+    needs:
+      - install
+      - unittest
+      - skip-linters
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
