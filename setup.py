@@ -26,7 +26,8 @@ try:
     from setuptools.command.build import build
 except ImportError:
     # Fallback for setuptools < 60 and Python < 3.12
-    from distutils.command.build import build  # pylint: disable=deprecated-module
+    # pylint: disable-next=deprecated-module
+    from distutils.command.build import build  # type: ignore
 
 HOOKS = ["hooks/disable-units", "hooks/enable-units"]
 MAN_PAGES = ["bdebstrap.1"]
