@@ -31,7 +31,7 @@ class IsortTestCase(unittest.TestCase):
     def test_isort(self):
         """Test: Run isort on Python source code."""
 
-        cmd = ["isort", "--check-only", "--diff", "-l", "99"] + get_source_files()
+        cmd = ["isort", "--check-only", "--diff"] + get_source_files()
         if unittest_verbosity() >= 2:
             sys.stderr.write(f"Running following command:\n{' '.join(cmd)}\n")
         with subprocess.Popen(

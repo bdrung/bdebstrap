@@ -31,7 +31,7 @@ class BlackTestCase(unittest.TestCase):
     def test_black(self):
         """Test: Run black code formatter on Python source code."""
 
-        cmd = ["black", "--check", "--diff", "-l", "99"] + get_source_files()
+        cmd = ["black", "--check", "--diff"] + get_source_files()
         if unittest_verbosity() >= 2:
             sys.stderr.write(f"Running following command:\n{' '.join(cmd)}\n")
         with subprocess.Popen(
