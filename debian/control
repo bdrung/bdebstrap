@@ -15,7 +15,7 @@ Build-Depends: black,
                python3-setuptools,
                python3-typeshed,
                shellcheck
-Standards-Version: 4.6.2
+Standards-Version: 4.7.0
 Homepage: https://github.com/bdrung/bdebstrap
 Rules-Requires-Root: no
 Vcs-Browser: https://github.com/bdrung/bdebstrap
