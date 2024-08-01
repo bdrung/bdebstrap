@@ -1,3 +1,16 @@
+bdebstrap 0.7.0 (2024-08-01)
+============================
+
+* feat: change default YAML flow style to `False`
+  ([PR #11](https://github.com/bdrung/bdebstrap/pull/11))
+* setup.py: Address pylint 3.2.2 complains
+  ([bug #13](https://github.com/bdrung/bdebstrap/issues/13),
+  [Debian bug #1074516](https://bugs.debian.org/1074516) and
+  [#1074699](https://bugs.debian.org/1074699))
+* test: support skip running linters via `SKIP_LINTERS=1` environment variable
+* fix(tests): Call pylint binary instead of the module
+* feat: Add type annotations and check them with mypy
+
 bdebstrap 0.6.1 (2024-03-01)
 ============================
 
