@@ -54,10 +54,12 @@ class DocCommand(Command):
             subprocess.check_call(command)
 
 
+# pylint: disable-next=too-few-public-methods
 class BuildCommand(build):
     """Custom build command (calling doc beforehand)."""
 
     def run(self) -> None:
+        """Execute the build command."""
         self.run_command("doc")
         super().run()
 
