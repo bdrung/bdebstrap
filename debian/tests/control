@@ -1,4 +1,4 @@
-Test-Command: cp -r examples tests "$AUTOPKGTEST_TMP" && cd "$AUTOPKGTEST_TMP" && ln -sf /usr/bin/bdebstrap bdebstrap.py && python3 -m unittest discover -v
+Tests: unittest
 Depends: bdebstrap,
          black,
          isort,
@@ -8,7 +8,6 @@ Depends: bdebstrap,
          python3-typeshed,
          shellcheck
 Restrictions: allow-stderr
-Features: test-name=unittest
 
 Test-Command: ./system-testing bdebstrap
 Depends: debian-archive-keyring,

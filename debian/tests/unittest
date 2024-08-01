@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+
+cp -r examples tests "$AUTOPKGTEST_TMP"
+cd "$AUTOPKGTEST_TMP"
+ln -sf /usr/bin/bdebstrap bdebstrap.py
+python3 -m unittest discover -v
