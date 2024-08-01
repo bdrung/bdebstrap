@@ -30,7 +30,7 @@ class BlackTestCase(unittest.TestCase):
     """
 
     @unittest.skipIf(os.environ.get("SKIP_LINTERS"), "requested via SKIP_LINTERS env variable")
-    def test_black(self):
+    def test_black(self) -> None:
         """Test: Run black code formatter on Python source code."""
         cmd = ["black", "--check", "--diff"] + get_source_files()
         if unittest_verbosity() >= 2:

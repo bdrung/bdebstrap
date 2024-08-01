@@ -19,7 +19,7 @@ import os
 import unittest
 
 
-def get_path(code_file):
+def get_path(code_file: str) -> str:
     """Return relative or absolute path to given code file.
 
     During Debian package build, the current directory is
@@ -35,7 +35,7 @@ def get_path(code_file):
     return code_file
 
 
-def get_source_files():
+def get_source_files() -> list[str]:
     """Return a list of sources files/directories (to check with flake8/pylint)."""
     scripts = ["bdebstrap"]
     modules = ["tests"]
@@ -54,7 +54,7 @@ def get_source_files():
     return files
 
 
-def unittest_verbosity():
+def unittest_verbosity() -> int:
     """
     Return the verbosity setting of the currently running unittest.
 
@@ -72,17 +72,17 @@ def unittest_verbosity():
 class TestGetPath(unittest.TestCase):
     """Unittests for get_path function."""
 
-    def test_get_path_exists(self):
+    def test_get_path_exists(self) -> None:
         """Test get_path(__file__)."""
         path = get_path(__file__)
         self.assertEqual(path, __file__)
 
-    def test_get_path_missing(self):
+    def test_get_path_missing(self) -> None:
         """Test non-existing file for get_path()."""
         path = get_path(__file__ + "non-existing")
         self.assertEqual(path, __file__ + "non-existing")
 
-    def test_get_path_pybuild(self):
+    def test_get_path_pybuild(self) -> None:
         """Test changing current directory before calling get_path()."""
         relpath = os.path.relpath(__file__)
         oldpwd = os.environ.get("OLDPWD")

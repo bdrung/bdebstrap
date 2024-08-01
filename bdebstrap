@@ -65,7 +65,7 @@ MMDEBSTRAP_OPTS = {
 }
 
 
-class Config(dict):
+class Config(dict[str, typing.Any]):
     """YAML configuration for bdebstrap."""
 
     _ENV_PREFIX = "BDEBSTRAP_"

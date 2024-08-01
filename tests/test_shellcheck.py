@@ -31,7 +31,7 @@ class ShellcheckTestCase(unittest.TestCase):
     """
 
     @unittest.skipIf(os.environ.get("SKIP_LINTERS"), "requested via SKIP_LINTERS env variable")
-    def test_shellcheck(self):
+    def test_shellcheck(self) -> None:
         """Test: Run shellcheck on Shell source code."""
         cmd = ["shellcheck"] + [get_path(s) for s in SHELL_SCRIPTS]
         if unittest_verbosity() >= 2:

@@ -31,7 +31,7 @@ class Flake8TestCase(unittest.TestCase):
     """
 
     @unittest.skipIf(os.environ.get("SKIP_LINTERS"), "requested via SKIP_LINTERS env variable")
-    def test_flake8(self):
+    def test_flake8(self) -> None:
         """Test: Run flake8 on Python source code."""
         cmd = [sys.executable, "-m", "flake8", "--max-line-length=99"] + get_source_files()
         if unittest_verbosity() >= 2:
