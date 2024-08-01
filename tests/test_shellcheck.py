@@ -29,7 +29,7 @@ class ShellcheckTestCase(unittest.TestCase):
     on Shell source code.
     """
 
-    def test_flake8(self):
+    def test_shellcheck(self):
         """Test: Run shellcheck on Shell source code."""
         cmd = ["shellcheck"] + [get_path(s) for s in SHELL_SCRIPTS]
         if unittest_verbosity() >= 2:
