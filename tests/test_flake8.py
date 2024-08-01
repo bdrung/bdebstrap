@@ -36,20 +36,17 @@ class Flake8TestCase(unittest.TestCase):
         cmd = [sys.executable, "-m", "flake8", "--max-line-length=99"] + get_source_files()
         if unittest_verbosity() >= 2:
             sys.stderr.write(f"Running following command:\n{' '.join(cmd)}\n")
-        with subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True
-        ) as process:
-            out, err = process.communicate()
+        process = subprocess.run(cmd, capture_output=True, check=False, text=True)
 
         if process.returncode != 0:  # pragma: no cover
             msgs = []
-            if err:
+            if process.stderr:
                 msgs.append(
-                    f"flake8 exited with code {process.returncode} "
-                    f"and has unexpected output on stderr:\n{err.decode().rstrip()}"
+                    f"flake8 exited with code {process.returncode} and has"
+                    f" unexpected output on stderr:\n{process.stderr.rstrip()}"
                 )
-            if out:
-                msgs.append(f"flake8 found issues:\n{out.decode().rstrip()}")
+            if process.stdout:
+                msgs.append(f"flake8 found issues:\n{process.stdout.rstrip()}")
             if not msgs:
                 msgs.append(
                     f"flake8 exited with code {process.returncode} "

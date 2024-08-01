@@ -42,10 +42,7 @@ class PylintTestCase(unittest.TestCase):
             cmd.insert(2, "--errors-only")
         if unittest_verbosity() >= 2:
             sys.stderr.write(f"Running following command:\n{' '.join(cmd)}\n")
-        with subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True
-        ) as process:
-            out, err = process.communicate()
+        process = subprocess.run(cmd, capture_output=True, check=False, text=True)
 
         if process.returncode != 0:  # pragma: no cover
             # Strip trailing summary (introduced in pylint 1.7). This summary might look like:
@@ -54,11 +51,11 @@ class PylintTestCase(unittest.TestCase):
             # Your code has been rated at 10.00/10
             #
             out = re.sub(
-                "^(-+|Your code has been rated at .*)$", "", out.decode(), flags=re.MULTILINE
+                "^(-+|Your code has been rated at .*)$", "", process.stdout, flags=re.MULTILINE
             ).rstrip()
 
             # Strip logging of used config file (introduced in pylint 1.8)
-            err = re.sub("^Using config file .*\n", "", err.decode()).rstrip()
+            err = re.sub("^Using config file .*\n", "", process.stderr.rstrip())
 
             msgs = []
             if err:

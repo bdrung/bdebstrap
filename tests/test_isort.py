@@ -36,10 +36,7 @@ class IsortTestCase(unittest.TestCase):
         cmd = ["isort", "--check-only", "--diff"] + get_source_files()
         if unittest_verbosity() >= 2:
             sys.stderr.write(f"Running following command:\n{' '.join(cmd)}\n")
-        with subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True
-        ) as process:
-            output = process.communicate()[0].decode()
+        process = subprocess.run(cmd, capture_output=True, check=False, text=True)
 
         if process.returncode != 0:  # pragma: no cover
-            self.fail(f"isort found unsorted Python import definitions:\n{output.strip()}")
+            self.fail(f"isort found unsorted Python import definitions:\n{process.stdout.strip()}")
