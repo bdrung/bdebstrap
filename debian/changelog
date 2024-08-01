@@ -1,3 +1,14 @@
+bdebstrap (0.7.0-1) unstable; urgency=medium
+
+  * New upstream release.
+    - setup.py: Address pylint 3.2.2 complains (Closes: #1074516, #1074699)
+  * Build-depend on mypy for type checks
+  * Bump Standards-Version to 4.7.0
+  * Skip running linters during build and autopkgtest except for pylint with
+    --errors-only and mypy.
+
+ -- Benjamin Drung <bdrung@debian.org>  Thu, 01 Aug 2024 22:51:42 +0200
+
 bdebstrap (0.6.1-1) unstable; urgency=medium
 
   * New upstream release.
