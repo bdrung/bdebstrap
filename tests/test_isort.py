@@ -32,7 +32,6 @@ class IsortTestCase(unittest.TestCase):
     @unittest.skipIf(os.environ.get("SKIP_LINTERS"), "requested via SKIP_LINTERS env variable")
     def test_isort(self):
         """Test: Run isort on Python source code."""
-
         cmd = ["isort", "--check-only", "--diff"] + get_source_files()
         if unittest_verbosity() >= 2:
             sys.stderr.write(f"Running following command:\n{' '.join(cmd)}\n")

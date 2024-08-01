@@ -36,7 +36,6 @@ class PylintTestCase(unittest.TestCase):
 
     def test_pylint(self):
         """Test: Run pylint on Python source code."""
-
         cmd = ["pylint", "--rcfile=" + CONFIG, "--"] + get_source_files()
         if os.environ.get("SKIP_LINTERS"):
             cmd.insert(2, "--errors-only")
