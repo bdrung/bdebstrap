@@ -14,6 +14,7 @@
 
 """Run black code formatter in check mode."""
 
+import os
 import subprocess
 import sys
 import unittest
@@ -28,6 +29,7 @@ class BlackTestCase(unittest.TestCase):
     source files is provided by the get_source_files() function.
     """
 
+    @unittest.skipIf(os.environ.get("SKIP_LINTERS"), "requested via SKIP_LINTERS env variable")
     def test_black(self):
         """Test: Run black code formatter on Python source code."""
 

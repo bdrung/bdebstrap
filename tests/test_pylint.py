@@ -38,6 +38,8 @@ class PylintTestCase(unittest.TestCase):
         """Test: Run pylint on Python source code."""
 
         cmd = [sys.executable, "-m", "pylint", "--rcfile=" + CONFIG, "--"] + get_source_files()
+        if os.environ.get("SKIP_LINTERS"):
+            cmd.insert(4, "--errors-only")
         if unittest_verbosity() >= 2:
             sys.stderr.write(f"Running following command:\n{' '.join(cmd)}\n")
         with subprocess.Popen(

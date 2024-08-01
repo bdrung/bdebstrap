@@ -14,6 +14,7 @@
 
 """Run isort to check if Python import definitions are sorted."""
 
+import os
 import subprocess
 import sys
 import unittest
@@ -28,6 +29,7 @@ class IsortTestCase(unittest.TestCase):
     is provided by the get_source_files() function.
     """
 
+    @unittest.skipIf(os.environ.get("SKIP_LINTERS"), "requested via SKIP_LINTERS env variable")
     def test_isort(self):
         """Test: Run isort on Python source code."""
 

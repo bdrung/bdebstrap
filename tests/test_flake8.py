@@ -14,6 +14,7 @@
 
 """Run flake8 check."""
 
+import os
 import subprocess
 import sys
 import unittest
@@ -29,6 +30,7 @@ class Flake8TestCase(unittest.TestCase):
     get_source_files() function.
     """
 
+    @unittest.skipIf(os.environ.get("SKIP_LINTERS"), "requested via SKIP_LINTERS env variable")
     def test_flake8(self):
         """Test: Run flake8 on Python source code."""
         cmd = [sys.executable, "-m", "flake8", "--max-line-length=99"] + get_source_files()
