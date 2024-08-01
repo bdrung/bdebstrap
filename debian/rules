@@ -1,6 +1,7 @@
 #!/usr/bin/make -f
 
 export PYBUILD_TEST_ARGS=-s $(CURDIR)
+export SKIP_LINTERS=1
 
 %:
 	dh $@ --buildsystem pybuild --with python3

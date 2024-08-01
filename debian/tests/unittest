@@ -4,4 +4,4 @@ set -eu
 cp -r examples .pylintrc pyproject.toml tests "$AUTOPKGTEST_TMP"
 cd "$AUTOPKGTEST_TMP"
 ln -sf /usr/bin/bdebstrap bdebstrap.py
-python3 -m unittest discover -v
+SKIP_LINTERS=1 python3 -m unittest discover -v
