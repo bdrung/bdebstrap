@@ -1,5 +1,9 @@
 Tests: unittest
-Depends: bdebstrap, mypy, pylint (>= 2.2.2-2~) | pylint3, python3-typeshed
+Depends: bdebstrap,
+         mypy,
+         pylint (>= 2.2.2-2~) | pylint3,
+         python3-setuptools,
+         python3-typeshed
 Restrictions: allow-stderr
 
 Test-Command: ./system-testing bdebstrap
