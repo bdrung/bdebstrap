@@ -1,3 +1,9 @@
+bdebstrap (0.7.0-2) unstable; urgency=medium
+
+  * debian/tests/control: depend on python3-setuptools
+
+ -- Benjamin Drung <bdrung@debian.org>  Thu, 06 Feb 2025 22:50:32 +0100
+
 bdebstrap (0.7.0-1) unstable; urgency=medium
 
   * New upstream release.
