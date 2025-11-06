@@ -119,5 +119,5 @@ if __name__ == "__main__":
         install_requires=["ruamel.yaml"],
         scripts=["bdebstrap"],
         py_modules=[],
-        data_files=[("/usr/share/man/man1", MAN_PAGES), ("/usr/share/bdebstrap/hooks", HOOKS)],
+        data_files=[("share/man/man1", MAN_PAGES), ("share/bdebstrap/hooks", HOOKS)],
     )
