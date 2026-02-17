@@ -37,7 +37,6 @@ class DocCommand(Command):
     """A custom command to build the documentation using pandoc."""
 
     description = "run pandoc to generate man pages"
-    user_options: list[tuple[str, str, str]] = []
 
     def initialize_options(self) -> None:
         """Set default values for options."""
