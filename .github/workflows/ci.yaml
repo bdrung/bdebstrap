@@ -33,7 +33,7 @@ jobs:
           apt-get update &&
           apt-get install --no-install-recommends --yes pandoc python3
           python3-coverage python3-ruamel.yaml python3-setuptools
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Run build
         run: python3 -m coverage run --branch setup.py build
       - name: Run install
@@ -73,7 +73,7 @@ jobs:
           apt-get install --no-install-recommends --yes black isort mypy pylint
           python3 python3-coverage python3-flake8 python3-ruamel.yaml
           python3-setuptools python3-typeshed shellcheck
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Run unit tests
         run: |
           python3 -m coverage run -m unittest discover -v
@@ -109,7 +109,7 @@ jobs:
           apt-get install --no-install-recommends --yes mypy pylint python3
           python3-coverage python3-ruamel.yaml python3-setuptools
           python3-typeshed
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Run unit tests
         run: |
           SKIP_LINTERS=1 python3 -m coverage run -m unittest discover -v
@@ -138,7 +138,7 @@ jobs:
     env:
       DEBIAN_FRONTEND: noninteractive
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install dependencies
         run: >
           apt-get update &&
@@ -153,7 +153,7 @@ jobs:
     container:
       image: debian:testing-slim
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install dependencies
         run: |
           apt-get update
@@ -170,7 +170,7 @@ jobs:
       - skip-linters
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Download artifacts
         uses: actions/download-artifact@v4
       - name: Upload coverage to Codecov
