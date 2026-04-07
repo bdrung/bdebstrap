@@ -10,7 +10,7 @@ Build-Depends: debhelper-compat (= 13),
                python3-ruamel.yaml,
                python3-setuptools,
                python3-typeshed
-Standards-Version: 4.7.0
+Standards-Version: 4.7.4
 Homepage: https://github.com/bdrung/bdebstrap
 Vcs-Browser: https://github.com/bdrung/bdebstrap
 Vcs-Git: https://github.com/bdrung/bdebstrap.git -b debian/unstable
