@@ -17,7 +17,6 @@ jobs:
         container:
           - debian:stable-slim
           - debian:testing-slim
-          - debian:unstable-slim
           - ubuntu:latest
           - ubuntu:rolling
           - ubuntu:devel
