@@ -1,3 +1,16 @@
+bdebstrap 0.8.0 (2026-04-07)
+============================
+
+* mmdebstrap: expand environment variables in mirror paths
+* setup:
+  - do not override `user_options` class variable
+    ([Debian bug #1127500](https://bugs.debian.org/1127500))
+  - Make data_files relative to prefix
+* Add and use `Ubuntu-26.04.yaml` example
+* Add and use `Debian-trixie-live.yaml` example
+* system-testing: skip unsupported architectures
+  ([Debian bug #1098877](https://bugs.debian.org/1098877))
+
 bdebstrap 0.7.0 (2024-08-01)
 ============================
 
