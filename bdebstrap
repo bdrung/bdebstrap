@@ -339,7 +339,7 @@ class Mmdebstrap:
         # Positional arguments
         cmd.append(mmdebstrap.get("suite", "-"))
         cmd.append(mmdebstrap.get("target", "-"))
-        cmd += mmdebstrap.get("mirrors", [])
+        cmd += [os.path.expandvars(m) for m in mmdebstrap.get("mirrors", [])]
 
         return cmd
 
