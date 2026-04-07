@@ -50,7 +50,10 @@ test_example2() {
             armel) kernel="linux-image-rpi" ;;
             armhf) kernel="linux-image-armmp-lpae" ;;
             ppc64el) kernel="linux-image-powerpc64le" ;;
-            *) kernel="linux-image-${DEB_HOST_ARCH}" ;;
+            riscv64|s390x) kernel="linux-image-${DEB_HOST_ARCH}" ;;
+            *)
+                echo "Info: Skipping this example, because the architecture ${DEB_HOST_ARCH} is not supported for trixie."
+                ;;
         esac
         sed -i "s/linux-image-cloud-amd64/${kernel}/" Debian-trixie-live.yaml
         sed -i "s/amd64/${DEB_HOST_ARCH}/" Debian-trixie-live.yaml
