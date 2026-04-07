@@ -1,3 +1,14 @@
+bdebstrap (0.8.0-1) unstable; urgency=medium
+
+  * New upstream release (Closes: #1129486)
+    - do not override user_options class variable (Closes: #1127500)
+    - system-testing: skip unsupported architectures (Closes: #1098877)
+  * Drop redundant Priority: optional and Rules-Requires-Root: no
+  * Bump Standards-Version to 4.7.4
+  * Update debian/watch to version 5
+
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 07 Apr 2026 18:46:04 +0200
+
 bdebstrap (0.7.0-2) unstable; urgency=medium
 
   * debian/tests/control: depend on python3-setuptools
