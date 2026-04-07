@@ -12,7 +12,6 @@ Build-Depends: debhelper-compat (= 13),
                python3-typeshed
 Standards-Version: 4.7.0
 Homepage: https://github.com/bdrung/bdebstrap
-Rules-Requires-Root: no
 Vcs-Browser: https://github.com/bdrung/bdebstrap
 Vcs-Git: https://github.com/bdrung/bdebstrap.git -b debian/unstable
 
