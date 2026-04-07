@@ -1,0 +1,8 @@
+---
+mmdebstrap:
+  keyrings:
+    - /usr/share/keyrings/ubuntu-archive-keyring.gpg
+  mode: unshare
+  suite: resolute
+  target: root.tar.xz
+  variant: minbase
