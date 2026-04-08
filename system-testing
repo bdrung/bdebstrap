@@ -53,6 +53,7 @@ test_example2() {
             riscv64|s390x) kernel="linux-image-${DEB_HOST_ARCH}" ;;
             *)
                 echo "Info: Skipping this example, because the architecture ${DEB_HOST_ARCH} is not supported for trixie."
+                return 0
                 ;;
         esac
         sed -i "s/linux-image-cloud-amd64/${kernel}/" Debian-trixie-live.yaml
