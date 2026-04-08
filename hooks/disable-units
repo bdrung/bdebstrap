@@ -16,8 +16,8 @@ chroot_directory="$1"
 shift
 
 for unit in "$@"; do
-    unit_files=$(test ! -d "${chroot_directory}/etc/systemd/system" ||
-                 find "${chroot_directory}"/etc/systemd/system/*.wants -name "$unit" -o -name "${unit}.service")
+    unit_files=$(test ! -d "${chroot_directory}/etc/systemd/system" \
+        || find "${chroot_directory}"/etc/systemd/system/*.wants -name "$unit" -o -name "${unit}.service")
     if test -n "$unit_files"; then
         echo "${0##*/}: Disabling unit $unit..." >&2
         rm "$unit_files"

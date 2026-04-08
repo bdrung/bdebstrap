@@ -1,0 +1,13 @@
+# EditorConfig configuration for bdebstrap
+# http://EditorConfig.org
+
+root = true
+
+[*]
+indent_size = 4
+indent_style = space
+
+# shfmt configs
+binary_next_line = true
+space_redirects = true
+switch_case_indent = true

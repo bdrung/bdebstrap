@@ -148,6 +148,20 @@ jobs:
       - name: Run system-testing
         run: ./system-testing
 
+  shfmt:
+    runs-on: ubuntu-latest
+    container:
+      image: debian:testing-slim
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install --no-install-recommends --yes shfmt
+      - name: Run shfmt
+        run: |
+          shfmt -d .
+
   yamllint:
     runs-on: ubuntu-latest
     container:
