@@ -74,15 +74,15 @@ test_example2() {
 test_example3() {
     header "Example 3: Minimal Ubuntu 26.04 LTS tarball"
     case "$DEB_HOST_ARCH" in
-        amd64|amd64v3|arm64|armhf|i386|ppc64el|riscv64|s390x)
-            "$bdebstrap_binary" -v -c "$examples_dir/Ubuntu-26.04.yaml" --name example3 --mode root
-            check_existing example3 config.yaml manifest root.tar.xz
-            rm -r example3
-            ;;
+        amd64|amd64v3|arm64|armhf|i386|ppc64el|riscv64|s390x) ;;
         *)
             echo "Info: Skipping this example, because Ubuntu does not support architecture ${DEB_HOST_ARCH}."
+            return 0
             ;;
     esac
+    "$bdebstrap_binary" -v -c "$examples_dir/Ubuntu-26.04.yaml" --name example3 --mode root
+    check_existing example3 config.yaml manifest root.tar.xz
+    rm -r example3
 }
 
 test_example1
