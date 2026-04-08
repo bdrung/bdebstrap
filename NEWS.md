@@ -1,3 +1,10 @@
+bdebstrap 0.8.1 (2026-04-08)
+============================
+
+* system-testing:
+  - fix skipping test 2 on unsupported architectures
+  - skip Ubuntu 26.04 test on riscv64 if it lacks an RVA23S64 ISA
+
 bdebstrap 0.8.0 (2026-04-07)
 ============================
 

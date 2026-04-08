@@ -93,7 +93,7 @@ if __name__ == "__main__":
 
     setup(
         name="bdebstrap",
-        version="0.8.0",
+        version="0.8.1",
         description="Benjamin's multi-mirror Debian chroot creation tool",
         long_description=LONG_DESCRIPTION,
         long_description_content_type="text/markdown",
@@ -105,7 +105,6 @@ if __name__ == "__main__":
         classifiers=[
             "Development Status :: 5 - Production/Stable",
             "Environment :: Console",
-            "License :: OSI Approved :: ISC License (ISCL)",
             "Operating System :: POSIX",
             "Programming Language :: Python :: 3",
             "Programming Language :: Python :: 3 :: Only",
@@ -113,6 +112,11 @@ if __name__ == "__main__":
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
+            "Programming Language :: Python :: 3.10",
+            "Programming Language :: Python :: 3.11",
+            "Programming Language :: Python :: 3.12",
+            "Programming Language :: Python :: 3.13",
+            "Programming Language :: Python :: 3.14",
         ],
         cmdclass={"doc": DocCommand, "build": BuildCommand, "clean": CleanCommand},
         install_requires=["ruamel.yaml"],

@@ -16,13 +16,13 @@ chroot_directory="$1"
 shift
 
 for unit in "$@"; do
-    if test -e "${chroot_directory}/etc/systemd/system/${unit}" || \
-       test -e "${chroot_directory}/lib/systemd/system/${unit}" || \
-       test -e "${chroot_directory}/usr/lib/systemd/system/${unit}" || \
-       test -e "${chroot_directory}/etc/systemd/system/${unit}.service" || \
-       test -e "${chroot_directory}/lib/systemd/system/${unit}.service" || \
-       test -e "${chroot_directory}/usr/lib/systemd/system/${unit}.service" || \
-       test -e "${chroot_directory}/etc/init.d/$unit"; then
+    if test -e "${chroot_directory}/etc/systemd/system/${unit}" \
+        || test -e "${chroot_directory}/lib/systemd/system/${unit}" \
+        || test -e "${chroot_directory}/usr/lib/systemd/system/${unit}" \
+        || test -e "${chroot_directory}/etc/systemd/system/${unit}.service" \
+        || test -e "${chroot_directory}/lib/systemd/system/${unit}.service" \
+        || test -e "${chroot_directory}/usr/lib/systemd/system/${unit}.service" \
+        || test -e "${chroot_directory}/etc/init.d/$unit"; then
         echo "${0##*/}: Enabling unit $unit..." >&2
         echo "${0##*/}: Calling chroot \"${chroot_directory}\" /bin/systemctl enable \"$unit\"" >&2
         chroot "${chroot_directory}" /bin/systemctl enable "$unit"

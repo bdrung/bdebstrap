@@ -50,9 +50,10 @@ test_example2() {
             armel) kernel="linux-image-rpi" ;;
             armhf) kernel="linux-image-armmp-lpae" ;;
             ppc64el) kernel="linux-image-powerpc64le" ;;
-            riscv64|s390x) kernel="linux-image-${DEB_HOST_ARCH}" ;;
+            riscv64 | s390x) kernel="linux-image-${DEB_HOST_ARCH}" ;;
             *)
                 echo "Info: Skipping this example, because the architecture ${DEB_HOST_ARCH} is not supported for trixie."
+                return 0
                 ;;
         esac
         sed -i "s/linux-image-cloud-amd64/${kernel}/" Debian-trixie-live.yaml
@@ -73,15 +74,21 @@ test_example2() {
 test_example3() {
     header "Example 3: Minimal Ubuntu 26.04 LTS tarball"
     case "$DEB_HOST_ARCH" in
-        amd64|amd64v3|arm64|armhf|i386|ppc64el|riscv64|s390x)
-            "$bdebstrap_binary" -v -c "$examples_dir/Ubuntu-26.04.yaml" --name example3 --mode root
-            check_existing example3 config.yaml manifest root.tar.xz
-            rm -r example3
+        amd64 | amd64v3 | arm64 | armhf | i386 | ppc64el | s390x) ;;
+        riscv64)
+            if ! grep -q "^isa.*sscofpmf" /proc/cpuinfo; then
+                echo "Info: Skipping this example, because riscv64 CPU does not support RVA23S64 ISA."
+                return 0
+            fi
             ;;
         *)
             echo "Info: Skipping this example, because Ubuntu does not support architecture ${DEB_HOST_ARCH}."
+            return 0
             ;;
     esac
+    "$bdebstrap_binary" -v -c "$examples_dir/Ubuntu-26.04.yaml" --name example3 --mode root
+    check_existing example3 config.yaml manifest root.tar.xz
+    rm -r example3
 }
 
 test_example1
