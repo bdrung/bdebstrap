@@ -105,7 +105,6 @@ if __name__ == "__main__":
         classifiers=[
             "Development Status :: 5 - Production/Stable",
             "Environment :: Console",
-            "License :: OSI Approved :: ISC License (ISCL)",
             "Operating System :: POSIX",
             "Programming Language :: Python :: 3",
             "Programming Language :: Python :: 3 :: Only",
