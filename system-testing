@@ -74,7 +74,13 @@ test_example2() {
 test_example3() {
     header "Example 3: Minimal Ubuntu 26.04 LTS tarball"
     case "$DEB_HOST_ARCH" in
-        amd64 | amd64v3 | arm64 | armhf | i386 | ppc64el | riscv64 | s390x) ;;
+        amd64 | amd64v3 | arm64 | armhf | i386 | ppc64el | s390x) ;;
+        riscv64)
+            if ! grep -q "^isa.*sscofpmf" /proc/cpuinfo; then
+                echo "Info: Skipping this example, because riscv64 CPU does not support RVA23S64 ISA."
+                return 0
+            fi
+            ;;
         *)
             echo "Info: Skipping this example, because Ubuntu does not support architecture ${DEB_HOST_ARCH}."
             return 0
