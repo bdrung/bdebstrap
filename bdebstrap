@@ -297,7 +297,9 @@ class Mmdebstrap:
         if "aptopts" in mmdebstrap:
             cmd += [f"--aptopt={aptopt}" for aptopt in mmdebstrap["aptopts"]]
         if "keyrings" in mmdebstrap:
-            cmd += [f"--keyring={keyring}" for keyring in mmdebstrap["keyrings"]]
+            cmd += [
+                f"--keyring={os.path.expandvars(keyring)}" for keyring in mmdebstrap["keyrings"]
+            ]
         if "dpkgopts" in mmdebstrap:
             cmd += [f"--dpkgopt={dpkgopt}" for dpkgopt in mmdebstrap["dpkgopts"]]
         # For convenience use "packages" key as alias for "include"
